@@ -1,3 +1,246 @@
+@extends('layouts.app', ['title' => config('app.name', 'Supervisi Digital')])
+
+@php
+    $user = Auth::user();
+    $isAdmin = $user?->is_admin;
+    $isSupervisor = $user ? $user->schools()->wherePivot('role', 'supervisor')->exists() : false;
+    $isTeacher = $user ? $user->schools()->wherePivot('role', 'teacher')->exists() : false;
+
+    $dashboardRoute = $isAdmin
+        ? route('admin.dashboard')
+        : ($isSupervisor
+            ? route('supervisor.dashboard')
+            : ($isTeacher
+                ? route('guru.dashboard')
+                : (Route::has('dashboard.index') ? route('dashboard.index') : null)));
+@endphp
+
+@section('content')
+<div class="space-y-20">
+    <section class="grid items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
+        <div class="space-y-8">
+            <span class="inline-flex items-center gap-2 rounded-xl border border-indigo-100 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.3em] text-indigo-500 shadow-sm shadow-indigo-100 transition-all duration-300 ease-in-out">Supervisi Digital</span>
+            <div class="space-y-4">
+                <h1 class="text-4xl font-semibold text-slate-900 sm:text-5xl">Dashboard premium untuk supervisi pendidikan yang tenang dan terukur</h1>
+                <p class="text-base text-slate-500 sm:text-lg">Kelola jadwal, undangan, evaluasi, dan pelaporan dalam satu antarmuka putih futuristik yang ringan, responsif, dan terintegrasi dengan ekosistem Google.</p>
+            </div>
+            <div class="flex flex-wrap gap-3">
+                @guest
+                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
+                        @include('layouts.partials.icon', ['name' => 'sparkles', 'classes' => 'h-4 w-4 text-white'])
+                        Masuk untuk Memulai
+                    </a>
+                    <a href="{{ route('google.redirect') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+                        @include('layouts.partials.icon', ['name' => 'cloud-upload', 'classes' => 'h-4 w-4 text-indigo-500'])
+                        Masuk dengan Google
+                    </a>
+                @else
+                    <a href="{{ route('profile.index') }}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
+                        @include('layouts.partials.icon', ['name' => 'user-circle', 'classes' => 'h-4 w-4 text-white'])
+                        Profil Saya
+                    </a>
+                    @if ($dashboardRoute)
+                        <a href="{{ $dashboardRoute }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+                            @include('layouts.partials.icon', ['name' => 'layout-dashboard', 'classes' => 'h-4 w-4 text-indigo-500'])
+                            Buka Dashboard
+                        </a>
+                    @endif
+                @endguest
+            </div>
+            <div class="grid gap-6 sm:grid-cols-3">
+                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50">
+                    <p class="text-3xl font-semibold text-slate-900">24+</p>
+                    <p class="mt-1 text-sm text-slate-500">Sekolah aktif dalam ekosistem Supervisi Digital</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50">
+                    <p class="text-3xl font-semibold text-slate-900">1.2K</p>
+                    <p class="mt-1 text-sm text-slate-500">Sesi supervisi tersinkronisasi lintas perangkat</p>
+                </div>
+                <div class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm shadow-slate-200/50">
+                    <p class="text-3xl font-semibold text-slate-900">98%</p>
+                    <p class="mt-1 text-sm text-slate-500">Tingkat kepuasan terhadap antarmuka modern</p>
+                </div>
+            </div>
+        </div>
+        <div class="relative">
+            <div class="rounded-2xl border border-slate-200 bg-white shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out">
+                <div class="space-y-6 p-8">
+                    <div class="flex items-center justify-between">
+                        <div class="space-y-1">
+                            <p class="text-xs font-semibold uppercase tracking-[0.25em] text-slate-400">Panel Jadwal</p>
+                            <h2 class="text-lg font-semibold text-slate-900">Supervisi Minggu Ini</h2>
+                        </div>
+                        <span class="inline-flex items-center gap-2 rounded-xl bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-500">
+                            @include('layouts.partials.icon', ['name' => 'calendar', 'classes' => 'h-4 w-4'])
+                            Sinkron Google
+                        </span>
+                    </div>
+                    <div class="space-y-4">
+                        @foreach ([
+                            ['time' => 'Selasa • 09.00', 'title' => 'Observasi Pembelajaran', 'location' => 'SMA Negeri 06 Bandung'],
+                            ['time' => 'Rabu • 13.30', 'title' => 'Evaluasi RPP & Penilaian', 'location' => 'SMK Informatika Nusantara'],
+                            ['time' => 'Kamis • 10.15', 'title' => 'Refleksi Supervisi', 'location' => 'SD Generasi Bangsa'],
+                            ['time' => 'Jumat • 15.00', 'title' => 'Pendampingan Guru', 'location' => 'SMP Cendekia Mandiri'],
+                        ] as $item)
+                            <div class="flex items-start gap-4 rounded-xl border border-slate-200/80 bg-[#F9FAFB] px-4 py-3 shadow-sm shadow-slate-200/50 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-md">
+                                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500">
+                                    @include('layouts.partials.icon', ['name' => 'timeline', 'classes' => 'h-5 w-5'])
+                                </div>
+                                <div class="space-y-1 text-sm">
+                                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-400">{{ $item['time'] }}</p>
+                                    <p class="font-semibold text-slate-900">{{ $item['title'] }}</p>
+                                    <p class="text-xs text-slate-500">{{ $item['location'] }}</p>
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-600">
+                        @include('layouts.partials.icon', ['name' => 'sparkles', 'classes' => 'mr-2 inline h-4 w-4 text-indigo-500'])
+                        Jadwal terintegrasi langsung dengan Google Calendar supervisor dan guru dengan pembaruan real-time.
+                    </div>
+                </div>
+            </div>
+            <div class="absolute -bottom-10 -left-6 hidden h-32 w-32 rounded-3xl bg-gradient-to-br from-indigo-500/20 to-blue-500/20 blur-3xl sm:block"></div>
+            <div class="absolute -top-12 -right-6 hidden h-28 w-28 rounded-3xl bg-gradient-to-br from-blue-400/15 to-indigo-400/15 blur-3xl sm:block"></div>
+        </div>
+    </section>
+
+    <section class="space-y-8">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div class="space-y-2">
+                <h2 class="text-2xl font-semibold text-slate-900">Kolaborasi terpadu dari undangan hingga evaluasi</h2>
+                <p class="text-sm text-slate-500">Setiap modul dirancang untuk memadukan kemudahan penggunaan dengan detail administratif yang presisi.</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <span class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm shadow-slate-200/70">
+                    @include('layouts.partials.icon', ['name' => 'badge-check', 'classes' => 'h-4 w-4 text-indigo-500'])
+                    Tersistem & Aman
+                </span>
+                <span class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 shadow-sm shadow-slate-200/70">
+                    @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-4 w-4 text-indigo-500'])
+                    Sinkron Otomatis
+                </span>
+            </div>
+        </div>
+        <div class="grid gap-6 lg:grid-cols-3">
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500">
+                    @include('layouts.partials.icon', ['name' => 'mail', 'classes' => 'h-5 w-5'])
+                </div>
+                <div class="mt-5 space-y-3">
+                    <h3 class="text-lg font-semibold text-slate-900">Undangan cerdas</h3>
+                    <p class="text-sm text-slate-500">Kirim undangan peran dengan masa berlaku, notifikasi follow-up, dan status pelacakan langsung.</p>
+                    <ul class="space-y-2 text-sm text-slate-500">
+                        <li class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
+                            Template surat profesional siap kirim
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
+                            Satu klik perpanjang masa berlaku
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-100 text-blue-500">
+                    @include('layouts.partials.icon', ['name' => 'calendar', 'classes' => 'h-5 w-5'])
+                </div>
+                <div class="mt-5 space-y-3">
+                    <h3 class="text-lg font-semibold text-slate-900">Jadwal intuitif</h3>
+                    <p class="text-sm text-slate-500">Atur agenda supervisi dalam tampilan minimalis dengan kontrol reschedule yang mudah dan aman.</p>
+                    <ul class="space-y-2 text-sm text-slate-500">
+                        <li class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-blue-400"></span>
+                            Notifikasi multi-kanal terjadwal
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-blue-400"></span>
+                            Persetujuan supervisor & guru real-time
+                        </li>
+                    </ul>
+                </div>
+            </div>
+            <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+                <div class="flex h-11 w-11 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
+                    @include('layouts.partials.icon', ['name' => 'document', 'classes' => 'h-5 w-5'])
+                </div>
+                <div class="mt-5 space-y-3">
+                    <h3 class="text-lg font-semibold text-slate-900">Evaluasi & arsip</h3>
+                    <p class="text-sm text-slate-500">RPP, catatan observasi, dan rekaman video tersimpan rapi dengan akses role-based yang terukur.</p>
+                    <ul class="space-y-2 text-sm text-slate-500">
+                        <li class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                            Integrasi Google Drive & eksport PDF
+                        </li>
+                        <li class="flex items-center gap-2">
+                            <span class="h-2 w-2 rounded-full bg-slate-400"></span>
+                            Riwayat evaluasi dinamis per guru
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="grid gap-8 rounded-2xl border border-slate-200 bg-white p-10 shadow-md shadow-slate-200/40 lg:grid-cols-[1.1fr_0.9fr]">
+        <div class="space-y-6">
+            <span class="inline-flex items-center gap-2 rounded-xl border border-indigo-100 bg-indigo-50/60 px-3 py-1 text-xs font-medium text-indigo-500">Cerita pengguna</span>
+            <p class="text-2xl font-semibold text-slate-900">“Dengan Supervisi Digital, evaluasi tidak lagi penuh spreadsheet yang membingungkan. Visualnya bersih, informasi lengkap, dan semuanya sinkron dengan Google. Rasanya seperti menggunakan produk SaaS premium.”</p>
+            <div class="flex items-center gap-3">
+                <div class="h-11 w-11 rounded-xl bg-gradient-to-br from-indigo-400 to-blue-400"></div>
+                <div>
+                    <p class="text-sm font-semibold text-slate-900">Novi Ashari</p>
+                    <p class="text-xs text-slate-500">Koordinator Supervisi • Dinas Pendidikan Kota Bandung</p>
+                </div>
+            </div>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-[#F9FAFB] p-6 text-sm text-slate-600 shadow-sm shadow-slate-200/60">
+            <h3 class="text-base font-semibold text-slate-900">Mengapa organisasi memilih kami</h3>
+            <ul class="mt-4 space-y-3">
+                <li class="flex items-start gap-3">
+                    <span class="mt-1 h-2 w-2 rounded-full bg-indigo-400"></span>
+                    <span>Arsitektur UI dengan sudut 0.75rem dan matriks spasi yang konsisten, meniru estetika Linear.app dan 21st.dev.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="mt-1 h-2 w-2 rounded-full bg-indigo-400"></span>
+                    <span>Komponen reusable berbasis TailwindCSS tanpa inline style, lengkap dengan animasi <code class="rounded bg-white px-1 text-xs text-indigo-500">transition-all duration-300 ease-in-out</code>.</span>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="mt-1 h-2 w-2 rounded-full bg-indigo-400"></span>
+                    <span>Sistem peran yang otomatis menyesuaikan pengalaman admin, supervisor, dan guru dalam satu kerangka kerja.</span>
+                </li>
+            </ul>
+        </div>
+    </section>
+
+    <section class="rounded-2xl border border-indigo-100 bg-gradient-to-br from-white via-indigo-50/50 to-blue-50/40 p-10 text-center shadow-lg shadow-indigo-100">
+        <div class="mx-auto max-w-2xl space-y-6">
+            <h2 class="text-3xl font-semibold text-slate-900">Siap menghadirkan supervisi digital kelas premium?</h2>
+            <p class="text-sm text-slate-500">Mulai dari undangan pengguna hingga evaluasi akhir, semua langkah tersedia dalam satu dashboard putih minimalis yang responsif.</p>
+            <div class="flex flex-wrap justify-center gap-3">
+                @guest
+                    <a href="{{ route('login') }}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
+                        @include('layouts.partials.icon', ['name' => 'layout-dashboard', 'classes' => 'h-4 w-4 text-white'])
+                        Masuk Sekarang
+                    </a>
+                    <a href="{{ route('register') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-6 py-3 text-sm font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+                        @include('layouts.partials.icon', ['name' => 'users', 'classes' => 'h-4 w-4 text-indigo-500'])
+                        Ajukan Akses Institusi
+                    </a>
+                @else
+                    @if ($dashboardRoute)
+                        <a href="{{ $dashboardRoute }}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-6 py-3 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
+                            @include('layouts.partials.icon', ['name' => 'layout-dashboard', 'classes' => 'h-4 w-4 text-white'])
+                            Lanjut ke Dashboard
+                        </a>
+                    @endif
+                @endguest
+            </div>
+        </div>
+    </section>
+</div>
+@endsection
 <!DOCTYPE html>
 <html lang="{{ str_replace('_', '-', app()->getLocale()) }}">
     <head>
@@ -49,6 +292,29 @@
                 </nav>
             @endif
         </header>
+        {{-- Auth section: Google login / profile link --}}
+        <section class="w-full lg:max-w-4xl max-w-[335px] mb-6">
+            @if (session('error'))
+                <div class="mb-4 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-700">{{ session('error') }}</div>
+            @endif
+            @if (session('success'))
+                <div class="mb-4 rounded border border-green-200 bg-green-50 p-3 text-sm text-green-700">{{ session('success') }}</div>
+            @endif
+            @if (session('info'))
+                <div class="mb-4 rounded border border-blue-200 bg-blue-50 p-3 text-sm text-blue-700">{{ session('info') }}</div>
+            @endif
+            @guest
+                <a href="{{ route('google.redirect') }}" class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="h-5 w-5"><path fill="#FFC107" d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12   s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C33.64,6.053,29.083,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20   s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"/><path fill="#FF3D00" d="M6.306,14.691l6.571,4.819C14.655,15.108,18.961,12,24,12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657   C33.64,6.053,29.083,4,24,4C16.318,4,9.656,8.337,6.306,14.691z"/><path fill="#4CAF50" d="M24,44c5.166,0,9.86-1.977,13.409-5.205l-6.19-5.238C29.211,35.091,26.715,36,24,36   c-5.202,0-9.619-3.317-11.283-7.946l-6.522,5.025C9.505,39.556,16.227,44,24,44z"/><path fill="#1976D2" d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.094,5.557   c0.001-0.001,0.002-0.001,0.003-0.002l6.19,5.238C36.971,39.205,44,34,44,24C44,22.659,43.862,21.35,43.611,20.083z"/></svg>
+                    Login dengan Google
+                </a>
+            @else
+                <div class="flex items-center gap-3">
+                    <a href="{{ route('profile.complete.show') }}" class="inline-flex items-center gap-2 bg-slate-100 hover:bg-slate-200 text-slate-800 px-4 py-2 rounded-lg">Lengkapi Profil</a>
+                </div>
+            @endguest
+        </section>
+
         <div class="flex items-center justify-center w-full transition-opacity opacity-100 duration-750 lg:grow starting:opacity-0">
             <main class="flex max-w-[335px] w-full flex-col-reverse lg:max-w-4xl lg:flex-row">
                 <div class="text-[13px] leading-[20px] flex-1 p-6 pb-12 lg:p-20 bg-white dark:bg-[#161615] dark:text-[#EDEDEC] shadow-[inset_0px_0px_0px_1px_rgba(26,26,0,0.16)] dark:shadow-[inset_0px_0px_0px_1px_#fffaed2d] rounded-bl-lg rounded-br-lg lg:rounded-tl-lg lg:rounded-br-none">

@@ -1,33 +1,33 @@
 # Supervisi Digital - TODO
 
-- [ ] t1-init: Inisialisasi proyek Laravel "supervisi-digital" dan setup Git
-- [ ] t2-db-env: Konfigurasi PostgreSQL dan .env (DB_DATABASE, DB_USERNAME, DB_PASSWORD), timezone=Asia/Jakarta, locale=id
-- [ ] t3-deps: Tambah dependensi
+- [x] t1-init: Inisialisasi proyek Laravel "supervisi-digital" dan setup Git
+- [x] t2-db-env: Konfigurasi PostgreSQL dan .env (DB_DATABASE, DB_USERNAME, DB_PASSWORD), timezone=Asia/Jakarta, locale=id
+- [x] t3-deps: Tambah dependensi
   - laravel/socialite (Google OAuth)
   - google/apiclient
   - maatwebsite/excel
   - spatie/laravel-permission
   - laravel/sanctum (opsional)
   - tailwindcss + laravel-vite-plugin
-- [ ] t4-arch: Arsitektur multi-sekolah & role
   - Model/tabel: `schools`, `users`, `school_user` (role per sekolah)
   - Supervisor bisa multi-sekolah; guru hanya satu sekolah
   - Scoping permission per `school_id` (teams)
-- [ ] t5-migrations: Migrasi & model inti
+- [x] t5-migrations: Migrasi & model inti
   - `schools`, `users`, `school_user`, `schedules`, `submissions`, `notes`, `evaluations`, `files`, `activity_logs`
-- [ ] t6-oauth: Google OAuth
+- [x] t6-oauth: Google OAuth
   - Scopes: openid, email, profile, drive.file, drive.metadata.readonly
   - Simpan refresh token user
+  - Catatan: pastikan Authorized redirect URI di Google Console = `${APP_URL}/auth/google/callback` (contoh: `http://127.0.0.1:8000/auth/google/callback`), lalu `php artisan config:clear`
 - [ ] t7-drive: Integrasi Google Drive
   - Root: "SUPERVISI DIGITAL"
   - Subfolder by tanggal: "DD-MM-YYYY"
   - Upload RPP/video; share folder + file ke supervisor (read/comment)
+  - Catatan: partial progress; hanya upload RPP/video yang berhasil
 - [ ] t8-ui: Blade UI modern (Tailwind)
   - Layout, navbar, sidebar, komponen tabel/kartu, form, toast
 - [ ] t9-teacher: Fitur Guru
   - Lihat jadwal, unggah RPP/video ke Drive, lihat catatan & penilaian
 - [ ] t10-supervisor: Fitur Supervisor
-  - CRUD jadwal, set status (Terjadwal/Mendatang/Selesai), lihat berkas, catatan/tindak lanjut (opsional), penilaian
 - [ ] t11-excel: Bulk Excel
   - Template export (jadwal, penilaian) + formula
   - Import (queue + validasi)
@@ -40,7 +40,7 @@
 - [ ] t17-excel-rubric: Ekstraksi rubrik dari Form Supervisi.xlsx → tabel/JSON
 - [ ] t18-file-validation: Validasi RPP (PDF/DOCX), Video (MP4); cek durasi ~30 menit 1080p via Drive metadata
 - [ ] t19-inapp-notify-ui: UI notifikasi (toast, indikator di dashboard/profile)
-- [ ] t20-todo-md: Simpan dan update TODO.md secara berkala
+- [x] t20-todo-md: Simpan dan update TODO.md secara berkala
 
 ## Catatan Kebijakan
 - Login Google: semua domain diizinkan (Google Cloud/testing mode; email di-whitelist).
@@ -48,3 +48,8 @@
   - RPP: PDF/DOCX; ukuran wajar (mis. ≤ 20 MB, dapat disesuaikan).
   - Video: MP4; durasi ≤ ~30 menit 1080p (cek `videoMediaMetadata.durationMillis`).
 - Supervisor multi-sekolah; Guru hanya satu sekolah (enforced di `school_user` & UI selector).
+
+## Progress tambahan
+- [x] t25-rubric-docs: Dokumentasi rubrik (lihat `docs/rubrik.md`)
+- [x] t26-oauth-routes-stubs: Routes OAuth Google + stub controller & GoogleDriveService
+- [x] t28-seed-roles: Seed roles dasar (teacher, supervisor) dengan Spatie Permission

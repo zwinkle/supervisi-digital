@@ -11,8 +11,16 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        $middleware->alias([
+            'is_admin' => App\Http\Middleware\IsAdmin::class,
+            'is_supervisor' => App\Http\Middleware\IsSupervisor::class,
+            'is_teacher' => App\Http\Middleware\IsTeacher::class,
+            'requires_google_linked' => App\Http\Middleware\RequiresGoogleLinked::class,
+        ]);
     })
+    ->withProviders([
+        App\Providers\AuthServiceProvider::class,
+    ])
     ->withExceptions(function (Exceptions $exceptions): void {
         //
     })->create();
