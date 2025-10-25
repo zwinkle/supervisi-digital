@@ -29,13 +29,13 @@
         <p class="text-xs text-slate-500">Tanggal: {{ optional($schedule->date)->translatedFormat('d F Y') ?? '-' }}</p>
       </div>
       <div class="rounded-xl bg-slate-50 px-4 py-3">
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Mata Pelajaran</p>
-        <p class="mt-1 text-sm font-semibold text-slate-900">{{ $schedule->teacher->subject ?? '-' }}</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Jenis Guru</p>
+        <p class="mt-1 text-sm font-semibold text-slate-900">{{ $schedule->teacher->teacher_type_label ?? '—' }}</p>
+        <p class="text-xs text-slate-500">Supervisor: {{ auth()->user()->name }}</p>
       </div>
       <div class="rounded-xl bg-slate-50 px-4 py-3">
-        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Kelas</p>
-        <p class="mt-1 text-sm font-semibold text-slate-900">{{ $schedule->teacher->class_name ?? '-' }}</p>
-        <p class="text-xs text-slate-500">Supervisor: {{ auth()->user()->name }}</p>
+        <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Detail Penugasan</p>
+        <p class="mt-1 text-sm font-semibold text-slate-900">{{ $schedule->teacher->teacher_detail_label ?? '—' }}</p>
       </div>
     </div>
   </div>

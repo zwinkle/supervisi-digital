@@ -10,7 +10,13 @@ class Submission extends Model
     use HasFactory;
 
     protected $fillable = [
-        'schedule_id', 'teacher_id', 'rpp_file_id', 'video_file_id', 'submitted_at'
+        'schedule_id',
+        'teacher_id',
+        'rpp_file_id',
+        'video_file_id',
+        'asesmen_file_id',
+        'administrasi_file_id',
+        'submitted_at',
     ];
 
     protected $casts = [
@@ -35,5 +41,15 @@ class Submission extends Model
     public function videoFile()
     {
         return $this->belongsTo(File::class, 'video_file_id');
+    }
+
+    public function asesmenFile()
+    {
+        return $this->belongsTo(File::class, 'asesmen_file_id');
+    }
+
+    public function administrasiFile()
+    {
+        return $this->belongsTo(File::class, 'administrasi_file_id');
     }
 }

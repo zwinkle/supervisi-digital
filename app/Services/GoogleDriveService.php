@@ -22,11 +22,12 @@ class GoogleDriveService
         $this->client->setAccessType('offline');
         $this->client->setPrompt('consent');
         // Set initial access token, including refresh_token if available
-        $this->client->setAccessToken(is_array($accessToken) ? $accessToken : ['access_token' => $accessToken]);
+        $tokenPayload = $this->normaliseAccessToken($accessToken);
+        $this->applyAccessToken($tokenPayload);
         if ($refreshToken) {
             $token = $this->client->getAccessToken() ?: [];
             $token['refresh_token'] = $refreshToken;
-            $this->client->setAccessToken($token);
+            $this->applyAccessToken($token);
         }
         // Refresh token if expired and refresh token is available
         if ($refreshToken && $this->client->isAccessTokenExpired()) {
@@ -35,9 +36,55 @@ class GoogleDriveService
             if (!isset($newToken['refresh_token'])) {
                 $newToken['refresh_token'] = $refreshToken;
             }
-            $this->client->setAccessToken($newToken);
+            $this->applyAccessToken($newToken);
         }
         $this->drive = new GoogleDrive($this->client);
+    }
+
+    /**
+     * Normalise persisted token formats (raw access token string, JSON, or array) into the format Google client expects.
+     */
+    protected function normaliseAccessToken($accessToken)
+    {
+        if (is_array($accessToken)) {
+            return $accessToken;
+        }
+
+        if (is_string($accessToken)) {
+            $trimmed = trim($accessToken);
+            if ($trimmed === '') {
+                return ['access_token' => ''];
+            }
+
+            $decoded = json_decode($trimmed, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && isset($decoded['access_token'])) {
+                return $decoded;
+            }
+
+            return [
+                'access_token' => $trimmed,
+                'token_type' => 'Bearer',
+            ];
+        }
+
+        throw new \InvalidArgumentException('Unsupported access token format');
+    }
+
+    /**
+     * Apply access token to the underlying Google client with graceful fallback for format issues.
+     */
+    protected function applyAccessToken($token): void
+    {
+        try {
+            $this->client->setAccessToken($token);
+        } catch (\InvalidArgumentException $e) {
+            if (stripos($e->getMessage(), 'Invalid token format') !== false) {
+                $payload = is_array($token) ? json_encode($token, JSON_THROW_ON_ERROR) : (string) $token;
+                $this->client->setAccessToken($payload);
+                return;
+            }
+            throw $e;
+        }
     }
 
     public function getClient(): GoogleClient

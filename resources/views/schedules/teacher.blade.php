@@ -47,8 +47,11 @@
                             @if(!empty($schedule->class_name))
                                 <span class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">Kelas <strong class="ml-1 text-slate-600">{{ $schedule->class_name }}</strong></span>
                             @endif
-                            @if(!empty(optional($schedule->teacher)->subject))
-                                <span class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">Mapel <strong class="ml-1 text-slate-600">{{ $schedule->teacher->subject }}</strong></span>
+                            @if(optional($schedule->teacher)->teacher_type_label)
+                                <span class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">Jenis <strong class="ml-1 text-slate-600">{{ $schedule->teacher->teacher_type_label }}</strong></span>
+                            @endif
+                            @if(optional($schedule->teacher)->teacher_detail_label)
+                                <span class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">Detail <strong class="ml-1 text-slate-600">{{ $schedule->teacher->teacher_detail_label }}</strong></span>
                             @endif
                             @if($schedule->conducted_at)
                                 <span class="inline-flex items-center gap-1 rounded border border-emerald-100 bg-emerald-50 px-2 py-1 text-emerald-600">Dilaksanakan {{ optional($schedule->conducted_at)->format('d-m-Y H:i') }}</span>

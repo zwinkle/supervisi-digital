@@ -22,6 +22,18 @@
             @include('layouts.partials.icon', ['name' => 'graduation-cap', 'classes' => 'h-4 w-4 text-slate-400'])
             {{ $schedule->teacher->name }}
           </span>
+          @if($schedule->teacher->teacher_type_label)
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+              @include('layouts.partials.icon', ['name' => 'sparkles', 'classes' => 'h-4 w-4 text-slate-400'])
+              {{ $schedule->teacher->teacher_type_label }}
+            </span>
+          @endif
+          @if($schedule->teacher->teacher_detail_label)
+            <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1">
+              @include('layouts.partials.icon', ['name' => 'bookmark', 'classes' => 'h-4 w-4 text-slate-400'])
+              {{ $schedule->teacher->teacher_detail_label }}
+            </span>
+          @endif
         @endif
       </div>
     </div>
@@ -38,25 +50,6 @@
   </div>
 
   <div class="grid gap-6 md:grid-cols-3">
-    @php($cards = [
-      'rpp' => [
-        'label' => 'RPP',
-        'icon' => 'document',
-        'description' => 'Evaluasi kelengkapan perangkat pembelajaran.'
-      ],
-      'pembelajaran' => [
-        'label' => 'Pembelajaran',
-        'icon' => 'layout-dashboard',
-        'description' => 'Penilaian pelaksanaan proses belajar mengajar.'
-      ],
-      'asesmen' => [
-        'label' => 'Asesmen',
-        'icon' => 'badge-check',
-        'description' => 'Kualitas instrumen penilaian yang digunakan.'
-      ],
-    ])
-    @endphp
-
     @foreach ($cards as $type => $meta)
       @php($evaluation = $evalByType->get($type))
       <div class="flex flex-col justify-between rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">

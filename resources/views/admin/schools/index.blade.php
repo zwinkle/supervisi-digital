@@ -33,7 +33,38 @@
   @endif
 
   <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40">
-    <div class="overflow-x-auto">
+    <div class="space-y-4 px-5 py-6 md:hidden">
+      @forelse ($schools as $s)
+        <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
+          <div class="space-y-1">
+            <p class="text-base font-semibold text-slate-900">{{ $s->name }}</p>
+            <p class="text-xs text-slate-400">Kode: {{ $s->npsn ?? 'Belum tersedia' }}</p>
+          </div>
+          <div class="space-y-1 text-xs text-slate-500">
+            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Alamat</p>
+            <p class="text-sm text-slate-600">{{ $s->address ?? 'Alamat belum diisi' }}</p>
+          </div>
+          <div class="flex flex-wrap justify-end gap-2">
+            <a href="{{ route('admin.schools.edit', $s) }}" class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+              @include('layouts.partials.icon', ['name' => 'pencil', 'classes' => 'h-3.5 w-3.5'])
+              Edit
+            </a>
+            <form action="{{ route('admin.schools.destroy', $s) }}" method="post" class="inline js-confirm" data-message="Hapus sekolah ini? Tindakan tidak dapat dibatalkan." data-variant="danger">
+              @csrf
+              @method('DELETE')
+              <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">
+                @include('layouts.partials.icon', ['name' => 'trash', 'classes' => 'h-3.5 w-3.5'])
+                Hapus
+              </button>
+            </form>
+          </div>
+        </article>
+      @empty
+        <div class="rounded-2xl border border-slate-200 bg-[#F9FAFB] px-4 py-5 text-center text-sm text-slate-400">Belum ada data sekolah.</div>
+      @endforelse
+    </div>
+
+    <div class="hidden overflow-x-auto md:block">
       <table class="min-w-full text-sm">
         <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
           <tr>

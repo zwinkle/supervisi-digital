@@ -63,6 +63,36 @@
         </div>
       </div>
 
+      <div class="grid gap-6 md:grid-cols-2">
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-sm font-semibold text-slate-700">Jenis Guru</label>
+          <select name="teacher_type" data-teacher-type class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
+            <option value="" disabled {{ old('teacher_type') ? '' : 'selected hidden' }}>Pilih jenis guru</option>
+            @foreach(($teacherTypes ?? []) as $value => $label)
+              <option value="{{ $value }}" @selected(old('teacher_type') === $value)>{{ $label }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="space-y-2" data-teacher-field="subject" style="display:none;">
+          <label class="text-sm font-semibold text-slate-700">Mata Pelajaran</label>
+          <select name="teacher_subject" data-required-for="subject" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="" disabled {{ old('teacher_subject') ? '' : 'selected hidden' }}>Pilih mata pelajaran</option>
+            @foreach(($subjects ?? []) as $subject)
+              <option value="{{ $subject }}" @selected(old('teacher_subject') === $subject)>{{ $subject }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="space-y-2" data-teacher-field="class" style="display:none;">
+          <label class="text-sm font-semibold text-slate-700">Kelas</label>
+          <select name="teacher_class" data-required-for="class" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="" disabled {{ old('teacher_class') ? '' : 'selected hidden' }}>Pilih kelas</option>
+            @foreach(($classes ?? []) as $class)
+              <option value="{{ $class }}" @selected(old('teacher_class') === $class)>Kelas {{ $class }}</option>
+            @endforeach
+          </select>
+        </div>
+      </div>
+
       <div class="flex flex-col gap-3 rounded-xl border border-indigo-100 bg-indigo-50/70 px-4 py-3 text-sm text-indigo-600">
         <div class="flex items-center gap-2 font-semibold">
           @include('layouts.partials.icon', ['name' => 'sparkles', 'classes' => 'h-4 w-4'])
@@ -84,4 +114,34 @@
     </form>
   </div>
 </div>
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', () => {
+    const typeSelect = document.querySelector('[data-teacher-type]');
+    const wrappers = document.querySelectorAll('[data-teacher-field]');
+
+    const sync = () => {
+      const current = typeSelect.value;
+      wrappers.forEach(wrapper => {
+        const type = wrapper.getAttribute('data-teacher-field');
+        const control = wrapper.querySelector('[data-required-for]');
+        const active = current === type;
+        wrapper.style.display = active ? 'block' : 'none';
+        if (control) {
+          if (active) {
+            control.setAttribute('required', 'required');
+          } else {
+            control.removeAttribute('required');
+          }
+        }
+      });
+    };
+
+    if (typeSelect) {
+      typeSelect.addEventListener('change', sync);
+      sync();
+    }
+  });
+</script>
+@endpush
 @endsection

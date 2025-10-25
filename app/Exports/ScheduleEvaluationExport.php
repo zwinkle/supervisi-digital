@@ -30,8 +30,9 @@ class ScheduleEvaluationExport implements FromArray, WithStyles, WithColumnWidth
         $rows[] = ['Nama Sekolah', $s->school->name ?? ''];
         $rows[] = ['Nama Supervisor', $s->supervisor->name ?? ''];
         $rows[] = ['Tanggal Supervisi', optional($s->date)->format('d-m-Y')];
-        $rows[] = ['Mata Pelajaran', $s->teacher->subject ?? ''];
-        $rows[] = ['Kelas', $s->class_name ?? $s->teacher->class_name ?? ''];
+        $rows[] = ['Jenis Guru', $s->teacher->teacher_type_label ?? ''];
+        $rows[] = ['Detail Penugasan', $s->teacher->teacher_detail_label ?? ''];
+        $rows[] = ['Kelas Supervisi', $s->class_name ?? ''];
 
         $getVal = function(string $type, string $sectionKey, string $itemKey) use ($evalByType) {
             $e = $evalByType->get($type);

@@ -11,7 +11,17 @@ class Invitation extends Model
     use HasFactory;
 
     protected $fillable = [
-        'email', 'name', 'role', 'school_ids', 'token', 'invited_by', 'expires_at', 'used_at'
+        'email',
+        'name',
+        'role',
+        'school_ids',
+        'token',
+        'invited_by',
+        'expires_at',
+        'used_at',
+        'teacher_type',
+        'teacher_subject',
+        'teacher_class',
     ];
 
     protected $casts = [

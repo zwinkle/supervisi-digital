@@ -8,6 +8,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Carbon;
 
@@ -46,10 +47,23 @@ class InviteController extends Controller
             $user->password = Hash::make($data['password']);
         }
         $user->is_admin = $inv->role === 'admin';
+        if ($inv->role === 'teacher') {
+            $hasTeacherTypeColumn = Schema::hasColumn('users', 'teacher_type');
+            if ($hasTeacherTypeColumn) {
+                $user->teacher_type = $inv->teacher_type;
+            }
+            if ($inv->teacher_type === 'subject') {
+                $user->subject = $inv->teacher_subject;
+                $user->class_name = null;
+            } elseif ($inv->teacher_type === 'class') {
+                $user->class_name = $inv->teacher_class;
+                $user->subject = null;
+            }
+        }
         $user->save();
 
         // Clear existing pivot roles before applying new
-        $user->schools()->wherePivotIn('role', ['supervisor','teacher'])->detach();
+        $user->schools()->detach();
         if ($inv->role === 'supervisor') {
             foreach ((array)$inv->school_ids as $sid) {
                 $user->schools()->syncWithoutDetaching([$sid => ['role' => 'supervisor']]);

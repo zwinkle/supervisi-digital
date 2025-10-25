@@ -98,12 +98,33 @@
                                         @include('layouts.partials.icon', ['name' => 'user-circle', 'classes' => 'h-3.5 w-3.5 text-indigo-400'])
                                         {{ $schedule->teacher->name }}
                                     </div>
+                                    <div class="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-wide text-slate-400">
+                                        @if($schedule->teacher->teacher_type_label)
+                                            <span class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">Jenis <strong class="ml-1 text-slate-600">{{ $schedule->teacher->teacher_type_label }}</strong></span>
+                                        @endif
+                                        @if($schedule->teacher->teacher_detail_label)
+                                            <span class="inline-flex items-center gap-1 rounded border border-slate-200 bg-white px-2 py-1">Detail <strong class="ml-1 text-slate-600">{{ $schedule->teacher->teacher_detail_label }}</strong></span>
+                                        @endif
+                                    </div>
                                 @endif
                             </div>
-                            <a href="{{ $schedule->submission ? ($schedule->submission->rppFile->web_view_link ?? '#') : '#' }}" target="_blank" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
-                                @include('layouts.partials.icon', ['name' => 'document', 'classes' => 'h-4 w-4 text-indigo-500'])
-                                Lihat Berkas
-                            </a>
+                            @php($hasSubmissionFiles = $schedule->submission && (
+                                $schedule->submission->rppFile ||
+                                $schedule->submission->videoFile ||
+                                $schedule->submission->asesmenFile ||
+                                $schedule->submission->administrasiFile
+                            ))
+                            @if($hasSubmissionFiles)
+                                <a href="{{ route('supervisor.submissions.show', $schedule) }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+                                    @include('layouts.partials.icon', ['name' => 'document', 'classes' => 'h-4 w-4 text-indigo-500'])
+                                    Lihat Berkas
+                                </a>
+                            @else
+                                <span class="inline-flex items-center gap-2 rounded-xl border border-dashed border-slate-200 bg-[#F9FAFB] px-3 py-2 text-xs font-semibold text-slate-400">
+                                    @include('layouts.partials.icon', ['name' => 'inbox', 'classes' => 'h-4 w-4 text-slate-400'])
+                                    Belum ada unggahan
+                                </span>
+                            @endif
                         </div>
                     </article>
                 @empty

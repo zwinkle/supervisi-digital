@@ -104,6 +104,12 @@
             display: none;
         }
 
+        body.is-uploading #sidebar-collapse-handle,
+        body.is-uploading [data-sidebar-toggle] {
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+
         html.prefers-collapsed body [data-sidebar-collapse] .icon-expanded,
         body.sidebar-collapsed [data-sidebar-collapse] .icon-expanded {
             display: none;

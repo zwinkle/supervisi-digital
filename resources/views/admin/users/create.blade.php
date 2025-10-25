@@ -35,6 +35,11 @@
         <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
         <input type="email" name="email" value="{{ old('email') }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
       </div>
+      <div class="space-y-2 md:col-span-2">
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">NIP</label>
+        <input type="text" name="nip" value="{{ old('nip') }}" minlength="8" maxlength="18" pattern="[0-9]*" inputmode="numeric" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        <p class="text-xs text-slate-400">Isi hanya angka tanpa spasi atau tanda baca (opsional).</p>
+      </div>
     </div>
 
     <div class="space-y-2">
@@ -48,24 +53,73 @@
       <p class="text-xs text-slate-400">Password minimal 8 karakter dan kombinasi angka serta huruf.</p>
     </div>
 
-    <div class="grid gap-5 md:grid-cols-2">
-      <div class="space-y-2">
-        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Role</label>
-        <select name="role" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
-          <option value="admin" @selected(old('role') === 'admin')>Admin</option>
-          <option value="supervisor" @selected(old('role') === 'supervisor')>Supervisor</option>
-          <option value="teacher" @selected(old('role') === 'teacher')>Guru</option>
-        </select>
+    @php($initialRole = old('role', 'admin'))
+    @php($selectedSupervisorIds = collect(old('supervisor_school_ids', []))->filter())
+
+    <div class="space-y-2">
+      <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Role</label>
+      <select name="role" id="role" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
+        <option value="admin" @selected($initialRole === 'admin')>Admin</option>
+        <option value="supervisor" @selected($initialRole === 'supervisor')>Supervisor</option>
+        <option value="teacher" @selected($initialRole === 'teacher')>Guru</option>
+      </select>
+    </div>
+
+    <div id="supervisor-wrapper" class="space-y-3" style="{{ $initialRole === 'supervisor' ? 'display:block;' : 'display:none;' }}">
+      <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Sekolah yang diawasi</label>
+      <div class="grid gap-3 sm:grid-cols-2">
+        @foreach($schools as $school)
+          <label class="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 shadow-sm">
+            <input type="checkbox" name="supervisor_school_ids[]" value="{{ $school->id }}" class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-500 focus:ring-indigo-400" @checked($selectedSupervisorIds->contains($school->id))>
+            <span>
+              <span class="font-semibold text-slate-700">{{ $school->name }}</span>
+            </span>
+          </label>
+        @endforeach
       </div>
+      <p class="text-xs text-slate-400">Pilih satu atau lebih sekolah yang berada dalam pengawasan supervisor.</p>
+    </div>
+
+    <div id="teacher-wrapper" class="space-y-4" style="{{ $initialRole === 'teacher' ? 'display:block;' : 'display:none;' }}">
       <div class="space-y-2">
-        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Sekolah</label>
-        <select name="school_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Sekolah guru</label>
+        <select name="teacher_school_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
           <option value="">Pilih sekolah</option>
-          @foreach(\App\Models\School::orderBy('name')->get() as $school)
-            <option value="{{ $school->id }}" @selected(old('school_id') == $school->id)>{{ $school->name }}</option>
+          @foreach($schools as $school)
+            <option value="{{ $school->id }}" @selected(old('teacher_school_id') == $school->id)>{{ $school->name }}</option>
           @endforeach
         </select>
-        <p class="text-xs text-slate-400">Pilih sekolah untuk role supervisor atau guru.</p>
+        <p class="text-xs text-slate-400">Guru hanya dapat terhubung ke satu sekolah.</p>
+      </div>
+
+      <div id="teacher-meta-wrapper" class="grid gap-5 md:grid-cols-2" style="{{ $initialRole === 'teacher' ? 'grid' : 'display:none;' }}">
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jenis Guru</label>
+          <select name="teacher_type" data-teacher-type class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="" disabled {{ old('teacher_type') ? '' : 'selected hidden' }}>Pilih jenis guru</option>
+            @foreach(($teacherTypes ?? []) as $value => $label)
+              <option value="{{ $value }}" @selected(old('teacher_type') === $value)>{{ $label }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="space-y-2" data-teacher-field="subject" style="{{ old('teacher_type') === 'subject' ? 'display:block;' : 'display:none;' }}">
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mata Pelajaran</label>
+          <select name="teacher_subject" data-required-for="subject" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="" disabled {{ old('teacher_subject') ? '' : 'selected hidden' }}>Pilih mata pelajaran</option>
+            @foreach(($subjects ?? []) as $subject)
+              <option value="{{ $subject }}" @selected(old('teacher_subject') === $subject)>{{ $subject }}</option>
+            @endforeach
+          </select>
+        </div>
+        <div class="space-y-2" data-teacher-field="class" style="{{ old('teacher_type') === 'class' ? 'display:block;' : 'display:none;' }}">
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kelas</label>
+          <select name="teacher_class" data-required-for="class" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+            <option value="" disabled {{ old('teacher_class') ? '' : 'selected hidden' }}>Pilih kelas</option>
+            @foreach(($classes ?? []) as $class)
+              <option value="{{ $class }}" @selected(old('teacher_class') === $class)>Kelas {{ $class }}</option>
+            @endforeach
+          </select>
+        </div>
       </div>
     </div>
 
@@ -84,6 +138,13 @@
   document.addEventListener('DOMContentLoaded', () => {
     const toggleButton = document.querySelector('.js-toggle-pass');
     const passwordInput = document.querySelector('.js-pass');
+    const roleSelect = document.getElementById('role');
+    const supervisorWrapper = document.getElementById('supervisor-wrapper');
+    const teacherWrapper = document.getElementById('teacher-wrapper');
+    const teacherMetaWrapper = document.getElementById('teacher-meta-wrapper');
+    const teacherTypeSelect = document.querySelector('[data-teacher-type]');
+    const teacherFields = document.querySelectorAll('[data-teacher-field]');
+
     if (toggleButton && passwordInput) {
       const icons = {
         show: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4"><path d="M3 3l18 18" /><path d="M10.6 5.3a11 11 0 0 1 1.4-.05c6 0 9.5 6.5 9.5 6.5a18.3 18.3 0 0 1-3 3.8" /><path d="M6.3 6.3A18.7 18.7 0 0 0 2.5 12s3.5 6.5 9.5 6.5c1.2 0 2.3-.2 3.3-.5" /><circle cx="12" cy="12" r="3" /></svg>',
@@ -98,6 +159,66 @@
         renderIcon();
       });
     }
+
+    const syncTeacherFields = () => {
+      if (!teacherTypeSelect) return;
+      const current = teacherTypeSelect.value;
+      teacherFields.forEach((wrapper) => {
+        const type = wrapper.getAttribute('data-teacher-field');
+        const control = wrapper.querySelector('[data-required-for]');
+        const active = current === type;
+        wrapper.style.display = active ? 'block' : 'none';
+        if (control) {
+          if (active) {
+            control.setAttribute('required', 'required');
+          } else {
+            control.removeAttribute('required');
+          }
+        }
+      });
+    };
+
+    const syncRoleUI = () => {
+      const role = roleSelect.value;
+      const showSupervisor = role === 'supervisor';
+      const showTeacher = role === 'teacher';
+
+      if (supervisorWrapper) {
+        supervisorWrapper.style.display = showSupervisor ? 'block' : 'none';
+      }
+
+      if (teacherWrapper) {
+        teacherWrapper.style.display = showTeacher ? 'block' : 'none';
+      }
+
+      if (teacherMetaWrapper) {
+        teacherMetaWrapper.style.display = showTeacher ? 'grid' : 'none';
+      }
+
+      if (!showTeacher) {
+        teacherFields.forEach(wrapper => {
+          const control = wrapper.querySelector('[data-required-for]');
+          if (control) {
+            control.removeAttribute('required');
+          }
+        });
+      } else {
+        syncTeacherFields();
+      }
+    };
+
+    if (roleSelect) {
+      roleSelect.addEventListener('change', () => {
+        syncRoleUI();
+        syncTeacherFields();
+      });
+    }
+    if (teacherTypeSelect) {
+      teacherTypeSelect.addEventListener('change', syncTeacherFields);
+    }
+
+    syncRoleUI();
+    syncTeacherFields();
   });
 </script>
 @endpush

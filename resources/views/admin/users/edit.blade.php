@@ -30,6 +30,11 @@
         : ($user->schools()->wherePivot('role', 'supervisor')->exists()
             ? 'supervisor'
             : ($user->schools()->wherePivot('role', 'teacher')->exists() ? 'teacher' : ''));
+    $isTeacherRole = old('role', $currentRole) === 'teacher';
+    $currentTeacherType = old('teacher_type', $resolvedTeacherType);
+    $currentTeacherSubject = old('teacher_subject', $resolvedTeacherSubject);
+    $currentTeacherClass = old('teacher_class', $resolvedTeacherClass);
+    $selectedSupervisorIds = collect(old('supervisor_school_ids', $user->schools()->wherePivot('role', 'supervisor')->pluck('schools.id')->toArray()))->filter();
   @endphp
 
   <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40">
@@ -43,6 +48,11 @@
         <div class="space-y-2">
           <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
           <input type="email" name="email" value="{{ old('email', $user->email) }}" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
+        </div>
+        <div class="space-y-2 md:col-span-2">
+          <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">NIP</label>
+          <input type="text" name="nip" value="{{ old('nip', $user->nip) }}" minlength="8" maxlength="18" pattern="[0-9]*" inputmode="numeric" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+          <p class="text-xs text-slate-400">Isi hanya angka tanpa spasi atau tanda baca.</p>
         </div>
       </div>
 
@@ -69,17 +79,20 @@
         </div>
       </div>
 
-      <div id="supervisor-wrapper" class="space-y-3">
+      <div id="supervisor-wrapper" class="space-y-3" style="{{ old('role', $currentRole) === 'supervisor' ? 'display:block;' : 'display:none;' }}">
         <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Sekolah yang diawasi</label>
-        <select name="supervisor_school_ids[]" id="supervisor_schools" multiple class="h-40 w-full rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+        <div class="grid gap-3 sm:grid-cols-2">
           @foreach ($schools as $s)
-            <option value="{{ $s->id }}" @selected(collect(old('supervisor_school_ids', $user->schools()->wherePivot('role', 'supervisor')->pluck('schools.id')->toArray()))->contains($s->id))>{{ $s->name }}</option>
+            <label class="flex items-start gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-600 shadow-sm">
+              <input type="checkbox" name="supervisor_school_ids[]" value="{{ $s->id }}" class="mt-1 h-4 w-4 rounded border-slate-300 text-indigo-500 focus:ring-indigo-400" @checked($selectedSupervisorIds->contains($s->id))>
+              <span class="font-semibold text-slate-700">{{ $s->name }}</span>
+            </label>
           @endforeach
-        </select>
-        <p class="text-xs text-slate-400">Supervisor dapat bertanggung jawab pada beberapa sekolah sekaligus.</p>
+        </div>
+        <p class="text-xs text-slate-400">Pilih satu atau lebih sekolah untuk supervisor ini.</p>
       </div>
 
-      <div id="teacher-wrapper" class="space-y-3">
+      <div id="teacher-wrapper" class="space-y-3" style="{{ $isTeacherRole ? 'display:block;' : 'display:none;' }}">
         <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Sekolah guru</label>
         <select name="teacher_school_id" id="teacher_school" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
           <option value="">Tidak sebagai guru</option>
@@ -88,6 +101,35 @@
           @endforeach
         </select>
         <p class="text-xs text-slate-400">Guru hanya dapat terdaftar di satu sekolah.</p>
+        <div class="grid gap-4 md:grid-cols-2">
+          <div class="space-y-2 md:col-span-2">
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jenis Guru</label>
+            <select name="teacher_type" data-teacher-type class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <option value="" disabled {{ $currentTeacherType ? '' : 'selected hidden' }}>Pilih jenis guru</option>
+              @foreach(($teacherTypes ?? []) as $value => $label)
+                <option value="{{ $value }}" @selected($currentTeacherType === $value)>{{ $label }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="space-y-2" data-teacher-field="subject" style="{{ $currentTeacherType === 'subject' ? 'display:block;' : 'display:none;' }}">
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mata Pelajaran</label>
+            <select name="teacher_subject" data-required-for="subject" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <option value="" disabled {{ $currentTeacherSubject ? '' : 'selected hidden' }}>Pilih mata pelajaran</option>
+              @foreach(($subjects ?? []) as $subject)
+                <option value="{{ $subject }}" @selected($currentTeacherSubject === $subject)>{{ $subject }}</option>
+              @endforeach
+            </select>
+          </div>
+          <div class="space-y-2" data-teacher-field="class" style="{{ $currentTeacherType === 'class' ? 'display:block;' : 'display:none;' }}">
+            <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kelas</label>
+            <select name="teacher_class" data-required-for="class" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+              <option value="" disabled {{ $currentTeacherClass ? '' : 'selected hidden' }}>Pilih kelas</option>
+              @foreach(($classes ?? []) as $class)
+                <option value="{{ $class }}" @selected($currentTeacherClass == $class)>Kelas {{ $class }}</option>
+              @endforeach
+            </select>
+          </div>
+        </div>
       </div>
 
       <div class="flex flex-wrap items-center gap-3">
@@ -122,14 +164,49 @@
     const passwordInput = document.querySelector('.js-pass');
     const toggleButton = document.querySelector('.js-toggle-pass');
 
+    const teacherTypeSelect = teacherWrapper ? teacherWrapper.querySelector('[data-teacher-type]') : null;
+    const teacherFields = teacherWrapper ? teacherWrapper.querySelectorAll('[data-teacher-field]') : [];
+
+    const syncTeacherFields = () => {
+      if (!teacherTypeSelect) return;
+      const current = teacherTypeSelect.value;
+      teacherFields.forEach(wrapper => {
+        const type = wrapper.getAttribute('data-teacher-field');
+        const control = wrapper.querySelector('[data-required-for]');
+        const active = current === type;
+        wrapper.style.display = active ? 'block' : 'none';
+        if (control) {
+          if (active) {
+            control.setAttribute('required', 'required');
+          } else {
+            control.removeAttribute('required');
+          }
+        }
+      });
+    };
+
     const syncRoleVisibility = () => {
       const value = roleSelect.value;
       supervisorWrapper.style.display = value === 'supervisor' ? 'block' : 'none';
       teacherWrapper.style.display = value === 'teacher' ? 'block' : 'none';
+      if (value === 'teacher') {
+        syncTeacherFields();
+      } else {
+        teacherFields.forEach(wrapper => {
+          const control = wrapper.querySelector('[data-required-for]');
+          if (control) {
+            control.removeAttribute('required');
+          }
+        });
+      }
     };
 
     roleSelect.addEventListener('change', syncRoleVisibility);
+    if (teacherTypeSelect) {
+      teacherTypeSelect.addEventListener('change', syncTeacherFields);
+    }
     syncRoleVisibility();
+    syncTeacherFields();
 
     if (toggleButton && passwordInput) {
       const icons = {

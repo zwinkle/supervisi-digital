@@ -49,23 +49,36 @@
                 </div>
             </div>
 
-            @if(!$hasSupervisor || $hasTeacher)
-                <div class="mt-6 grid gap-5 md:grid-cols-2">
-                    <div class="space-y-2">
-                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mata Pelajaran</label>
-                        <select name="subject" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
-                            <option value="" disabled selected hidden>Pilih mata pelajaran</option>
-                            @foreach(($subjects ?? []) as $opt)
-                                <option value="{{ $opt }}" @selected(old('subject', $user->subject) === $opt)>{{ $opt }}</option>
+            @php($requiresTeacherMeta = !$hasSupervisor || $hasTeacher)
+            @if($requiresTeacherMeta)
+                @php($currentTeacherType = old('teacher_type', $resolvedTeacherType))
+                @php($currentTeacherSubject = old('subject', $resolvedTeacherSubject))
+                @php($currentTeacherClass = old('class_name', $resolvedTeacherClass))
+                <div class="mt-6 grid gap-5 md:grid-cols-2" x-data>
+                    <div class="space-y-2 md:col-span-2">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jenis Guru</label>
+                        <select id="teacher-type" name="teacher_type" data-teacher-type class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" {{ $requiresTeacherMeta ? 'required' : '' }}>
+                            <option value="" disabled {{ $currentTeacherType ? '' : 'selected hidden' }}>Pilih jenis guru</option>
+                            @foreach(($teacherTypes ?? []) as $value => $label)
+                                <option value="{{ $value }}" @selected($currentTeacherType === $value)>{{ $label }}</option>
                             @endforeach
                         </select>
                     </div>
-                    <div class="space-y-2">
+                    <div class="space-y-2" data-teacher-field="subject" style="{{ $currentTeacherType === 'subject' ? 'display:block;' : 'display:none;' }}">
+                        <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mata Pelajaran</label>
+                        <select name="subject" data-required-for="subject" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                            <option value="" disabled {{ $currentTeacherSubject ? '' : 'selected hidden' }}>Pilih mata pelajaran</option>
+                            @foreach(($subjects ?? []) as $opt)
+                                <option value="{{ $opt }}" @selected($currentTeacherSubject === $opt)>{{ $opt }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+                    <div class="space-y-2" data-teacher-field="class" style="{{ $currentTeacherType === 'class' ? 'display:block;' : 'display:none;' }}">
                         <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kelas</label>
-                        <select name="class_name" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
-                            <option value="" disabled selected hidden>Pilih kelas</option>
+                        <select name="class_name" data-required-for="class" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                            <option value="" disabled {{ $currentTeacherClass ? '' : 'selected hidden' }}>Pilih kelas</option>
                             @foreach(($classes ?? []) as $c)
-                                <option value="{{ $c }}" @selected(old('class_name', $user->class_name) == $c)>Kelas {{ $c }}</option>
+                                <option value="{{ $c }}" @selected($currentTeacherClass == $c)>Kelas {{ $c }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -131,7 +144,30 @@
         if (!form || !submitBtn) {
             return;
         }
+
+        const teacherType = form.querySelector('[data-teacher-type]');
+        const fieldMap = Array.from(form.querySelectorAll('[data-teacher-field]'));
+
+        const syncTeacherFields = () => {
+            if (!teacherType) return;
+            const current = teacherType.value;
+            fieldMap.forEach(wrapper => {
+                const type = wrapper.getAttribute('data-teacher-field');
+                const input = wrapper.querySelector('[data-required-for]');
+                const isActive = current === type;
+                wrapper.style.display = isActive ? 'block' : 'none';
+                if (input) {
+                    if (isActive) {
+                        input.setAttribute('required', 'required');
+                    } else {
+                        input.removeAttribute('required');
+                    }
+                }
+            });
+        };
+
         const evaluate = () => {
+            syncTeacherFields();
             const requiredFilled = Array.from(form.querySelectorAll('[required]')).every((element) => {
                 if (element.tagName === 'SELECT') {
                     return Boolean(element.value);
@@ -141,10 +177,17 @@
             const valid = requiredFilled && (typeof form.checkValidity === 'function' ? form.checkValidity() : true);
             submitBtn.disabled = !valid;
         };
+
         form.addEventListener('input', evaluate);
         form.addEventListener('change', evaluate);
-        document.addEventListener('DOMContentLoaded', evaluate);
-        setTimeout(evaluate, 0);
+        document.addEventListener('DOMContentLoaded', () => {
+            syncTeacherFields();
+            evaluate();
+        });
+        setTimeout(() => {
+            syncTeacherFields();
+            evaluate();
+        }, 0);
     })();
 </script>
 @endsection

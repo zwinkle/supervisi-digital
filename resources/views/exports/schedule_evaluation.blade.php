@@ -34,8 +34,9 @@
         <tr><td>Nama Sekolah</td><td>{{ $schedule->school->name ?? '' }}</td></tr>
         <tr><td>Nama Supervisor</td><td>{{ $schedule->supervisor->name ?? '' }}</td></tr>
         <tr><td>Tanggal Supervisi</td><td>{{ optional($schedule->date)->format('d-m-Y') }}</td></tr>
-        <tr><td>Mata Pelajaran</td><td>{{ $schedule->teacher->subject ?? '' }}</td></tr>
-        <tr><td>Kelas</td><td>{{ $schedule->class_name ?? $schedule->teacher->class_name ?? '' }}</td></tr>
+        <tr><td>Jenis Guru</td><td>{{ $schedule->teacher->teacher_type_label ?? '' }}</td></tr>
+        <tr><td>Detail Penugasan</td><td>{{ $schedule->teacher->teacher_detail_label ?? '' }}</td></tr>
+        <tr><td>Kelas Supervisi</td><td>{{ $schedule->class_name ?? '' }}</td></tr>
     </table>
 
 <div class="page-break"></div>

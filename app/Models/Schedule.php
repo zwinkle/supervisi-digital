@@ -109,13 +109,22 @@ class Schedule extends Model
     {
         $submission = $this->submission;
         if (!$submission) return false;
-        return (bool) optional($submission->rppFile)->id && (bool) optional($submission->videoFile)->id;
+        return (bool) optional($submission->rppFile)->id
+            && (bool) optional($submission->videoFile)->id
+            && (bool) optional($submission->asesmenFile)->id
+            && (bool) optional($submission->administrasiFile)->id;
     }
 
     public function checkAndMarkCompleted(): void
     {
         if ($this->isCompleted()) return;
-        $this->loadMissing(['evaluations','submission.rppFile','submission.videoFile']);
+        $this->loadMissing([
+            'evaluations',
+            'submission.rppFile',
+            'submission.videoFile',
+            'submission.asesmenFile',
+            'submission.administrasiFile',
+        ]);
         if ($this->hasAllEvaluations() && $this->hasSubmissionFiles()) {
             $this->evaluated_at = Carbon::now();
             $this->save();

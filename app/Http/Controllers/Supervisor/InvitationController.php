@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Mail\InviteMail;
 use App\Models\Invitation;
 use App\Models\School;
+use App\Support\TeacherOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -32,7 +33,10 @@ class InvitationController extends Controller
     {
         $user = $request->user();
         $schools = $user->schools()->wherePivot('role','supervisor')->orderBy('name')->get();
-        return view('supervisor.invitations.create', compact('schools'));
+        $teacherTypes = TeacherOptions::teacherTypes();
+        $subjects = TeacherOptions::subjects();
+        $classes = TeacherOptions::classes();
+        return view('supervisor.invitations.create', compact('schools','teacherTypes','subjects','classes'));
     }
 
     public function store(Request $request)
@@ -44,9 +48,29 @@ class InvitationController extends Controller
             'name' => ['required','string','max:255'],
             'school_id' => ['required','integer','exists:schools,id'],
             'expires_in_days' => ['nullable','integer','min:1','max:30'],
+            'teacher_type' => ['required','in:subject,class'],
+            'teacher_subject' => ['nullable','string','max:255'],
+            'teacher_class' => ['nullable','string','max:50'],
         ]);
         if (!in_array($data['school_id'], $schoolIds)) {
             return back()->withErrors(['school_id' => 'Sekolah tidak berada dalam pengelolaan Anda.'])->withInput();
+        }
+
+        $teacherType = $data['teacher_type'];
+        if ($teacherType === 'subject') {
+            $subjects = TeacherOptions::subjects();
+            if (!in_array($data['teacher_subject'] ?? '', $subjects, true)) {
+                return back()->withErrors(['teacher_subject' => 'Pilih mata pelajaran yang tersedia.'])->withInput();
+            }
+            $teacherSubject = $data['teacher_subject'];
+            $teacherClass = null;
+        } elseif ($teacherType === 'class') {
+            $classes = TeacherOptions::classes();
+            if (!in_array($data['teacher_class'] ?? '', $classes, true)) {
+                return back()->withErrors(['teacher_class' => 'Pilih kelas yang tersedia.'])->withInput();
+            }
+            $teacherSubject = null;
+            $teacherClass = $data['teacher_class'];
         }
 
         $token = Str::random(40);
@@ -60,6 +84,9 @@ class InvitationController extends Controller
             'token' => $token,
             'invited_by' => $user->id,
             'expires_at' => $expiresAt,
+            'teacher_type' => $teacherType,
+            'teacher_subject' => $teacherSubject ?? null,
+            'teacher_class' => $teacherClass ?? null,
         ]);
 
         // generate signed url (not sent via email)

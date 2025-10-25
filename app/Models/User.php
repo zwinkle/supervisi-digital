@@ -24,6 +24,7 @@ class User extends Authenticatable
         'email',
         'password',
         'nip',
+        'teacher_type',
         'subject',
         'class_name',
         'avatar',
@@ -71,6 +72,60 @@ class User extends Authenticatable
     public function getRouteKeyName(): string
     {
         return 'uuid';
+    }
+
+    public function getTeacherTypeLabelAttribute(): ?string
+    {
+        $type = $this->resolveTeacherType();
+
+        return match ($type) {
+            'subject' => 'Guru Mata Pelajaran',
+            'class' => 'Guru Kelas',
+            default => null,
+        };
+    }
+
+    public function getTeacherDetailLabelAttribute(): ?string
+    {
+        $type = $this->resolveTeacherType();
+
+        return match ($type) {
+            'subject' => $this->subject,
+            'class' => $this->class_name ? 'Kelas ' . $this->class_name : null,
+            default => null,
+        };
+    }
+
+    public function getResolvedTeacherTypeAttribute(): ?string
+    {
+        return $this->resolveTeacherType();
+    }
+
+    public function getResolvedTeacherSubjectAttribute(): ?string
+    {
+        return $this->resolveTeacherType() === 'subject' ? $this->subject : null;
+    }
+
+    public function getResolvedTeacherClassAttribute(): ?string
+    {
+        return $this->resolveTeacherType() === 'class' ? $this->class_name : null;
+    }
+
+    protected function resolveTeacherType(): ?string
+    {
+        if (!is_null($this->teacher_type)) {
+            return $this->teacher_type;
+        }
+
+        if (!empty($this->subject)) {
+            return 'subject';
+        }
+
+        if (!empty($this->class_name)) {
+            return 'class';
+        }
+
+        return null;
     }
 
     // Relationships

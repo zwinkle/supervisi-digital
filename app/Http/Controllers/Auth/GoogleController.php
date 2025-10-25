@@ -81,7 +81,17 @@ class GoogleController extends Controller
 
             Auth::login($user, true);
 
-            $needsProfile = empty($user->nip) || empty($user->subject) || empty($user->class_name);
+            $hasTeacher = $user->schools()->wherePivot('role', 'teacher')->exists();
+            $hasSupervisor = $user->schools()->wherePivot('role', 'supervisor')->exists();
+            $requiresTeacherMeta = !$hasSupervisor || $hasTeacher;
+            $resolvedTeacherType = $user->resolved_teacher_type;
+            $missingTeacherMeta = $requiresTeacherMeta && (
+                empty($resolvedTeacherType) ||
+                ($resolvedTeacherType === 'subject' && empty($user->subject)) ||
+                ($resolvedTeacherType === 'class' && empty($user->class_name))
+            );
+
+            $needsProfile = empty($user->nip) || $missingTeacherMeta;
             if ($needsProfile) {
                 return redirect()->route('profile.complete.show')
                     ->with('info', 'Lengkapi profil Anda terlebih dahulu.');

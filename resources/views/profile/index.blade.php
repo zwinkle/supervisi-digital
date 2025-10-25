@@ -55,12 +55,12 @@
                     <dd>{{ $user->nip ?? '-' }}</dd>
                 </div>
                 <div class="flex flex-col gap-1">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Mata Pelajaran</dt>
-                    <dd>{{ $user->subject ?? '-' }}</dd>
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Jenis Guru</dt>
+                    <dd>{{ $user->teacher_type_label ?? '—' }}</dd>
                 </div>
                 <div class="flex flex-col gap-1">
-                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kelas</dt>
-                    <dd>{{ $user->class_name ?? '-' }}</dd>
+                    <dt class="text-xs font-semibold uppercase tracking-wide text-slate-400">Detail Penugasan</dt>
+                    <dd>{{ $user->teacher_detail_label ?? '—' }}</dd>
                 </div>
             </dl>
         </div>

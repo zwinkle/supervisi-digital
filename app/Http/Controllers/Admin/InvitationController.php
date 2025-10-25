@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Invitation;
 use App\Models\School;
+use App\Support\TeacherOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -22,7 +23,10 @@ class InvitationController extends Controller
     public function create()
     {
         $schools = School::orderBy('name')->get();
-        return view('admin.invitations.create', compact('schools'));
+        $teacherTypes = TeacherOptions::teacherTypes();
+        $subjects = TeacherOptions::subjects();
+        $classes = TeacherOptions::classes();
+        return view('admin.invitations.create', compact('schools', 'teacherTypes', 'subjects', 'classes'));
     }
 
     public function store(Request $request)
@@ -34,9 +38,15 @@ class InvitationController extends Controller
             'supervisor_school_id' => ['nullable','integer','exists:schools,id'],
             'teacher_school_id' => ['nullable','integer','exists:schools,id'],
             'expires_in_days' => ['nullable','integer','min:1','max:30'],
+            'teacher_type' => ['nullable','in:subject,class'],
+            'teacher_subject' => ['nullable','string','max:255'],
+            'teacher_class' => ['nullable','string','max:255'],
         ]);
 
         $schools = [];
+        $teacherType = null;
+        $teacherSubject = null;
+        $teacherClass = null;
         if ($data['role'] === 'supervisor') {
             $sid = $data['supervisor_school_id'] ?? null;
             if (empty($sid)) {
@@ -48,6 +58,27 @@ class InvitationController extends Controller
                 return back()->withErrors(['teacher_school_id' => 'Pilih satu sekolah untuk Guru.'])->withInput();
             }
             $schools = [(int)$data['teacher_school_id']];
+
+            $teacherType = $data['teacher_type'] ?? null;
+            if (!$teacherType) {
+                return back()->withErrors(['teacher_type' => 'Pilih jenis guru.'])->withInput();
+            }
+
+            if ($teacherType === 'subject') {
+                $validSubjects = TeacherOptions::subjects();
+                if (!in_array($data['teacher_subject'] ?? '', $validSubjects, true)) {
+                    return back()->withErrors(['teacher_subject' => 'Pilih mata pelajaran yang tersedia.'])->withInput();
+                }
+                $teacherSubject = $data['teacher_subject'];
+            } elseif ($teacherType === 'class') {
+                $validClasses = TeacherOptions::classes();
+                if (!in_array($data['teacher_class'] ?? '', $validClasses, true)) {
+                    return back()->withErrors(['teacher_class' => 'Pilih kelas yang tersedia.'])->withInput();
+                }
+                $teacherClass = $data['teacher_class'];
+            } else {
+                return back()->withErrors(['teacher_type' => 'Jenis guru tidak valid.'])->withInput();
+            }
         }
 
         $token = Str::random(40);
@@ -61,6 +92,9 @@ class InvitationController extends Controller
             'token' => $token,
             'invited_by' => $request->user()->id,
             'expires_at' => $expiresAt,
+            'teacher_type' => $teacherType,
+            'teacher_subject' => $teacherSubject,
+            'teacher_class' => $teacherClass,
         ]);
 
         $signedUrl = URL::temporarySignedRoute('invites.accept.show', $expiresAt, ['token' => $token]);

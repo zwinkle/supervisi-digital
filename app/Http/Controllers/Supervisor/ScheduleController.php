@@ -15,7 +15,15 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $schedules = Schedule::with(['school','teacher','submission.rppFile','submission.videoFile','evaluations'])
+        $schedules = Schedule::with([
+                'school',
+                'teacher',
+                'submission.rppFile',
+                'submission.videoFile',
+                'submission.asesmenFile',
+                'submission.administrasiFile',
+                'evaluations',
+            ])
             ->where('supervisor_id', $user->id)
             ->orderByDesc('date')
             ->get();
@@ -28,9 +36,27 @@ class ScheduleController extends Controller
         if ($schedule->supervisor_id !== $user->id) abort(403);
         $schedule->load(['school','teacher','evaluations']);
         $evalByType = ($schedule->evaluations ?? collect())->keyBy('type');
+        $cards = [
+            'rpp' => [
+                'label' => 'RPP',
+                'icon' => 'document',
+                'description' => 'Evaluasi kelengkapan perangkat pembelajaran.'
+            ],
+            'pembelajaran' => [
+                'label' => 'Pembelajaran',
+                'icon' => 'layout-dashboard',
+                'description' => 'Penilaian pelaksanaan proses belajar mengajar.'
+            ],
+            'asesmen' => [
+                'label' => 'Asesmen',
+                'icon' => 'badge-check',
+                'description' => 'Kualitas instrumen penilaian yang digunakan.'
+            ],
+        ];
         return view('supervisor.schedules.assessment', [
             'schedule' => $schedule,
             'evalByType' => $evalByType,
+            'cards' => $cards,
         ]);
     }
 
