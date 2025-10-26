@@ -42,7 +42,7 @@
         @php($link = $entry['link'])
         <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
           <div class="space-y-1">
-            <p class="text-base font-semibold text-slate-900">{{ $invitation->email }}</p>
+            <p class="text-base font-semibold text-slate-900 break-all">{{ $invitation->email }}</p>
             <p class="text-xs text-slate-400">Token: {{ Str::limit($invitation->token, 10) }}</p>
           </div>
           <div class="space-y-3 text-xs text-slate-500">
@@ -147,7 +147,7 @@
             <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
               <td class="px-5 py-4 align-top">
                 <div class="space-y-1">
-                  <p class="font-semibold text-slate-900">{{ $invitation->email }}</p>
+                  <div class="max-w-[240px] truncate font-semibold text-slate-900" title="{{ $invitation->email }}">{{ $invitation->email }}</div>
                   <p class="text-xs text-slate-400">Token: {{ Str::limit($invitation->token, 10) }}</p>
                 </div>
                 @php($typeLabel = \App\Support\TeacherOptions::teacherTypes()[$invitation->teacher_type] ?? null)

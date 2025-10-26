@@ -42,7 +42,7 @@
         @php($link = $entry['link'])
         <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
           <div class="space-y-1">
-            <p class="text-base font-semibold text-slate-900">{{ $inv->email }}</p>
+            <p class="text-base font-semibold text-slate-900 break-all">{{ $inv->email }}</p>
             <p class="text-xs text-slate-400">Token: {{ \Illuminate\Support\Str::limit($inv->token, 12) }}</p>
           </div>
           <div class="space-y-3 text-xs text-slate-500">
@@ -154,7 +154,7 @@
             <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
               <td class="px-5 py-4 align-top">
                 <div class="space-y-1">
-                  <p class="font-semibold text-slate-900">{{ $inv->email }}</p>
+                  <div class="max-w-[240px] truncate font-semibold text-slate-900" title="{{ $inv->email }}">{{ $inv->email }}</div>
                   <p class="text-xs text-slate-400">Token: {{ \Illuminate\Support\Str::limit($inv->token, 12) }}</p>
                 </div>
               </td>
