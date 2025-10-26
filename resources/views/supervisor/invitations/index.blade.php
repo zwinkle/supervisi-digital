@@ -147,7 +147,7 @@
             <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
               <td class="px-5 py-4 align-top">
                 <div class="space-y-1">
-                  <div class="max-w-[240px] truncate font-semibold text-slate-900" title="{{ $invitation->email }}">{{ $invitation->email }}</div>
+                  <div class="block w-[240px] truncate font-semibold text-slate-900" title="{{ $invitation->email }}">{{ $invitation->email }}</div>
                   <p class="text-xs text-slate-400">Token: {{ Str::limit($invitation->token, 10) }}</p>
                 </div>
                 @php($typeLabel = \App\Support\TeacherOptions::teacherTypes()[$invitation->teacher_type] ?? null)
