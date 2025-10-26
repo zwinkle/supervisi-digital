@@ -154,7 +154,7 @@
             <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
               <td class="px-5 py-4 align-top">
                 <div class="space-y-1">
-                  <div class="block w-[240px] truncate font-semibold text-slate-900" title="{{ $inv->email }}">{{ $inv->email }}</div>
+                  <div class="font-semibold text-slate-900" title="{{ $inv->email }}" style="display:block; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $inv->email }}</div>
                   <p class="text-xs text-slate-400">Token: {{ \Illuminate\Support\Str::limit($inv->token, 12) }}</p>
                 </div>
               </td>
