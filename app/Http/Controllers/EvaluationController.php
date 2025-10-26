@@ -12,12 +12,24 @@ class EvaluationController extends Controller
 {
     protected $types = ['rpp','pembelajaran','asesmen'];
 
+    protected $requirementMessages = [
+        'rpp' => 'Guru belum mengunggah file RPP.',
+        'pembelajaran' => 'Guru belum mengunggah file video pembelajaran.',
+        'asesmen' => 'Guru belum mengunggah file asesmen.',
+    ];
+
     public function show(Request $request, Schedule $schedule, $type)
     {
         $user = Auth::user();
         if (!in_array($type, $this->types, true)) abort(404);
         // Supervisor must own the schedule
         if ($schedule->supervisor_id !== $user->id) abort(403);
+
+        $schedule->loadMissing(['submission.rppFile','submission.videoFile','submission.asesmenFile']);
+        if (!$schedule->hasSubmissionFor($type)) {
+            return redirect()->route('supervisor.schedules.assessment', $schedule)
+                ->with('error', $this->requirementMessages[$type] ?? 'Berkas pendukung belum tersedia.');
+        }
 
         list($structure, $kind) = self::structureFor($type);
         $existing = Evaluation::where('schedule_id', $schedule->id)
@@ -39,6 +51,12 @@ class EvaluationController extends Controller
         $user = Auth::user();
         if (!in_array($type, $this->types, true)) abort(404);
         if ($schedule->supervisor_id !== $user->id) abort(403);
+
+        $schedule->loadMissing(['submission.rppFile','submission.videoFile','submission.asesmenFile']);
+        if (!$schedule->hasSubmissionFor($type)) {
+            return redirect()->route('supervisor.schedules.assessment', $schedule)
+                ->with('error', $this->requirementMessages[$type] ?? 'Berkas pendukung belum tersedia.');
+        }
 
         list($structure, $kind) = $this->structureFor($type);
 

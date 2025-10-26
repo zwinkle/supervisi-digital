@@ -115,6 +115,23 @@ class Schedule extends Model
             && (bool) optional($submission->administrasiFile)->id;
     }
 
+    public function hasSubmissionFor(string $type): bool
+    {
+        $submission = $this->submission;
+        if (!$submission) return false;
+
+        switch ($type) {
+            case 'rpp':
+                return (bool) optional($submission->rppFile)->id;
+            case 'pembelajaran':
+                return (bool) optional($submission->videoFile)->id;
+            case 'asesmen':
+                return (bool) optional($submission->asesmenFile)->id;
+        }
+
+        return false;
+    }
+
     public function checkAndMarkCompleted(): void
     {
         if ($this->isCompleted()) return;

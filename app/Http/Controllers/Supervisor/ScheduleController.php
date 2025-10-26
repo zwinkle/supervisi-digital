@@ -34,7 +34,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
         if ($schedule->supervisor_id !== $user->id) abort(403);
-        $schedule->load(['school','teacher','evaluations']);
+        $schedule->load(['school','teacher','evaluations','submission.rppFile','submission.videoFile','submission.asesmenFile']);
         $evalByType = ($schedule->evaluations ?? collect())->keyBy('type');
         $cards = [
             'rpp' => [
@@ -57,6 +57,11 @@ class ScheduleController extends Controller
             'schedule' => $schedule,
             'evalByType' => $evalByType,
             'cards' => $cards,
+            'availability' => [
+                'rpp' => $schedule->hasSubmissionFor('rpp'),
+                'pembelajaran' => $schedule->hasSubmissionFor('pembelajaran'),
+                'asesmen' => $schedule->hasSubmissionFor('asesmen'),
+            ],
         ]);
     }
 
