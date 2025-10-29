@@ -5,21 +5,52 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\School;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class SchoolController extends Controller
 {
     public function index(Request $request)
     {
-        $q = trim((string)$request->get('q', ''));
-        $schools = \App\Models\School::query()
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where('name', 'like', "%{$q}%")
-                      ->orWhere('address', 'like', "%{$q}%");
-            })
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
-        return view('admin.schools.index', compact('schools','q'));
+        $filter = Str::lower((string) $request->input('filter', 'name'));
+        $allowedFilters = collect(['name', 'address']);
+        if (!$allowedFilters->contains($filter)) {
+            $filter = 'name';
+        }
+
+        $q = trim((string) $request->input('q', ''));
+        $search = $q !== '' ? Str::lower($q) : null;
+
+        $schoolsQuery = School::query();
+
+        if ($search !== null) {
+            $schoolsQuery->where(function ($query) use ($filter, $search) {
+                switch ($filter) {
+                    case 'address':
+                        $query->whereRaw('LOWER(COALESCE(address, "")) LIKE ?', ["%{$search}%"]);
+                        break;
+                    case 'name':
+                    default:
+                        $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                        break;
+                }
+            });
+        }
+
+        $schools = $schoolsQuery->orderBy('name')->get();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html' => view('admin.schools.partials.results', [
+                    'schools' => $schools,
+                ])->render(),
+            ]);
+        }
+
+        return view('admin.schools.index', [
+            'schools' => $schools,
+            'q' => $q,
+            'filter' => $filter,
+        ]);
     }
     public function create()
     {

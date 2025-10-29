@@ -37,7 +37,7 @@
         </div>
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700">Sekolah</label>
-          <select name="school_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
+          <select name="school_id" id="school-select" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
             @foreach ($schools as $school)
               <option value="{{ $school->id }}" @selected(old('school_id', $schedule->school_id) == $school->id)>{{ $school->name }}</option>
             @endforeach
@@ -48,10 +48,25 @@
       <div class="grid gap-6 md:grid-cols-2">
         <div class="space-y-2">
           <label class="text-sm font-semibold text-slate-700">Guru</label>
-          <select name="teacher_id" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" required>
-            @foreach ($teachers as $teacher)
-              <option value="{{ $teacher->id }}" @selected(old('teacher_id', $schedule->teacher_id) == $teacher->id)>
-                {{ $teacher->name }} @if(!empty($teacher->nip))(NIP {{ $teacher->nip }})@endif
+          @php
+            $selectedSchoolId = old('school_id', $schedule->school_id);
+            $oldTeacherId = old('teacher_id', $schedule->teacher_id);
+            $initialTeachers = $selectedSchoolId ? ($teachersBySchool[$selectedSchoolId] ?? collect()) : collect();
+          @endphp
+          <select
+            name="teacher_id"
+            id="teacher-select"
+            class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+            required
+            data-placeholder="Pilih Guru"
+            data-select-school-label="Pilih sekolah terlebih dahulu"
+            data-empty-label="Tidak ada guru pada sekolah ini"
+            data-old-teacher="{{ $oldTeacherId }}"
+          >
+            <option value="" disabled {{ $oldTeacherId ? '' : 'selected' }}>Pilih Guru</option>
+            @foreach ($initialTeachers as $teacher)
+              <option value="{{ $teacher['id'] }}" @selected($oldTeacherId == $teacher['id'])>
+                {{ $teacher['name'] }} @if(!empty($teacher['nip']))(NIP {{ $teacher['nip'] }})@endif
               </option>
             @endforeach
           </select>
@@ -97,3 +112,74 @@
   </form>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const teacherSelect = document.getElementById('teacher-select');
+    if (!teacherSelect) {
+      return;
+    }
+
+    const teacherData = @json($teachersBySchool);
+    const schoolSelect = document.getElementById('school-select');
+    const selectSchoolLabel = teacherSelect.dataset.selectSchoolLabel || 'Pilih sekolah terlebih dahulu';
+    const placeholder = teacherSelect.dataset.placeholder || 'Pilih Guru';
+    const emptyLabel = teacherSelect.dataset.emptyLabel || 'Tidak ada guru pada sekolah ini';
+
+    const populateOptions = function (schoolId, preserveSelection) {
+      teacherSelect.innerHTML = '';
+
+      const defaultOption = document.createElement('option');
+      defaultOption.value = '';
+      defaultOption.disabled = true;
+      defaultOption.textContent = schoolId ? placeholder : selectSchoolLabel;
+      teacherSelect.appendChild(defaultOption);
+
+      const teachers = schoolId && teacherData[String(schoolId)] ? teacherData[String(schoolId)] : [];
+
+      if (teachers.length === 0) {
+        if (schoolId) {
+          defaultOption.textContent = emptyLabel;
+        }
+        defaultOption.selected = true;
+        teacherSelect.disabled = true;
+        return;
+      }
+
+      teachers.forEach(function (teacher) {
+        const option = document.createElement('option');
+        option.value = teacher.id;
+        option.textContent = teacher.nip ? teacher.name + ' (NIP ' + teacher.nip + ')' : teacher.name;
+        teacherSelect.appendChild(option);
+      });
+
+      teacherSelect.disabled = false;
+
+      if (preserveSelection) {
+        const previous = teacherSelect.dataset.oldTeacher;
+        if (previous && teacherSelect.querySelector('option[value="' + previous + '"]')) {
+          teacherSelect.value = previous;
+          teacherSelect.dataset.oldTeacher = '';
+          return;
+        }
+      }
+
+      defaultOption.selected = true;
+      teacherSelect.value = '';
+    };
+
+    if (schoolSelect) {
+      const initialSchoolId = schoolSelect.value;
+      if (initialSchoolId) {
+        populateOptions(initialSchoolId, true);
+      }
+
+      schoolSelect.addEventListener('change', function (event) {
+        teacherSelect.dataset.oldTeacher = '';
+        populateOptions(event.target.value, false);
+      });
+    }
+  });
+</script>
+@endpush

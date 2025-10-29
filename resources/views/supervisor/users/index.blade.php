@@ -28,108 +28,96 @@
     @endif
   @endforeach
 
-  @php($teacherItems = $teachers->map(function($teacher){
-      return [
-          'teacher' => $teacher,
-          'schools' => $teacher->schools()->where('school_user.role', 'teacher')->get(),
-      ];
-  }))
+  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40" id="supervisor-users-container">
+    <form id="supervisor-users-search" class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+      <div class="flex w-full flex-col gap-2 md:flex-row md:gap-3">
+        <div class="relative w-full md:max-w-sm">
+          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+            @include('layouts.partials.icon', ['name' => 'search', 'classes' => 'h-4 w-4'])
+          </span>
+          <input type="text" name="q" value="{{ $q }}" placeholder="Cari guru" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
+        </div>
+        <select name="filter" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:w-48">
+          @foreach (['name' => 'Nama', 'email' => 'Email', 'teacher_type' => 'Jenis Guru', 'school' => 'Sekolah'] as $key => $label)
+            <option value="{{ $key }}" @selected($filter === $key)>{{ $label }}</option>
+          @endforeach
+        </select>
+      </div>
+      <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
+    </form>
 
-  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40">
-    <div class="space-y-4 px-5 py-6 md:hidden">
-      @forelse ($teacherItems as $item)
-        @php($teacher = $item['teacher'])
-        @php($teacherSchools = $item['schools'])
-        <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
-          <div class="flex items-start gap-3">
-            <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-base font-semibold text-indigo-500">{{ Str::upper(Str::substr($teacher->name, 0, 2)) }}</div>
-            <div class="space-y-1 text-sm text-slate-500">
-              <p class="text-base font-semibold text-slate-900">{{ $teacher->name }}</p>
-              <p class="text-xs text-slate-400">ID: {{ $teacher->id }}</p>
-              <p class="text-xs text-slate-400">{{ $teacher->email }}</p>
-            </div>
-          </div>
-          <div class="space-y-1">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Sekolah</p>
-            <div class="flex flex-wrap gap-2">
-              @forelse ($teacherSchools as $school)
-                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
-                  <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                  {{ $school->name }}
-                </span>
-              @empty
-                <span class="text-xs text-slate-400">Belum terhubung ke sekolah</span>
-              @endforelse
-            </div>
-          </div>
-          <div class="space-y-1 text-xs text-slate-500">
-            <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Jenis Guru</p>
-            <div class="flex flex-wrap gap-2">
-              <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
-                <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                {{ $teacher->teacher_type_label ?? '—' }}
-              </span>
-              <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
-                <span class="h-2 w-2 rounded-full bg-slate-300"></span>
-                {{ $teacher->teacher_detail_label ?? '—' }}
-              </span>
-            </div>
-          </div>
-        </article>
-      @empty
-        <div class="rounded-2xl border border-slate-200 bg-[#F9FAFB] px-4 py-5 text-center text-sm text-slate-400">Belum ada guru pada sekolah di bawah pengawasan Anda.</div>
-      @endforelse
-    </div>
-
-    <div class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block">
-      <table class="min-w-full text-sm">
-        <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
-          <tr>
-            <th class="px-5 py-3 text-left">Guru</th>
-            <th class="px-5 py-3 text-left">Email</th>
-            <th class="px-5 py-3 text-left">Sekolah</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 text-slate-600">
-          @forelse ($teacherItems as $item)
-            @php($teacher = $item['teacher'])
-            @php($teacherSchools = $item['schools'])
-            <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
-              <td class="px-5 py-4 align-top">
-                <div class="flex items-start gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-sm font-semibold text-indigo-500">{{ Str::upper(Str::substr($teacher->name, 0, 2)) }}</div>
-                  <div class="space-y-1">
-                    <p class="font-semibold text-slate-900">{{ $teacher->name }}</p>
-                    <p class="text-xs text-slate-400">ID: {{ $teacher->id }}</p>
-                    <p class="text-xs text-slate-500"><span class="font-semibold text-slate-600">Jenis:</span> {{ $teacher->teacher_type_label ?? '—' }}</p>
-                    <p class="text-xs text-slate-500"><span class="font-semibold text-slate-600">Detail:</span> {{ $teacher->teacher_detail_label ?? '—' }}</p>
-                  </div>
-                </div>
-              </td>
-              <td class="px-5 py-4 align-top">
-                <span class="text-sm text-slate-600">{{ $teacher->email }}</span>
-              </td>
-              <td class="px-5 py-4 align-top">
-                <div class="flex flex-wrap gap-2">
-                  @forelse ($teacherSchools as $school)
-                    <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
-                      <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                      {{ $school->name }}
-                    </span>
-                  @empty
-                    <span class="text-xs text-slate-400">Belum terhubung ke sekolah</span>
-                  @endforelse
-                </div>
-              </td>
-            </tr>
-          @empty
-            <tr>
-              <td colspan="3" class="px-5 py-8 text-center text-sm text-slate-400">Belum ada guru pada sekolah di bawah pengawasan Anda.</td>
-            </tr>
-          @endforelse
-        </tbody>
-      </table>
+    <div id="supervisor-users-results">
+      @include('supervisor.users.partials.table', ['teachers' => $teachers])
     </div>
   </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('supervisor-users-search');
+    const container = document.getElementById('supervisor-users-container');
+    const results = document.getElementById('supervisor-users-results');
+    if (!form || !container || !results) {
+      return;
+    }
+
+    let controller = null;
+    let debounceTimer = null;
+
+    const submitAjax = function () {
+      const formData = new FormData(form);
+      const params = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          params.append(key, value);
+        }
+      }
+
+      if (controller) {
+        controller.abort();
+      }
+      controller = new AbortController();
+
+      container.classList.add('opacity-60');
+
+      fetch(`{{ route('supervisor.users.index') }}` + (params.toString() ? `?${params.toString()}` : ''), {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Gagal memuat data');
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (data.html) {
+            results.innerHTML = data.html;
+          }
+        })
+        .catch(function (error) {
+          if (error.name === 'AbortError') {
+            return;
+          }
+          console.error(error);
+        })
+        .finally(function () {
+          container.classList.remove('opacity-60');
+        });
+    };
+
+    const scheduleSubmit = function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(submitAjax, 250);
+    };
+
+    form.addEventListener('input', scheduleSubmit);
+    form.addEventListener('change', scheduleSubmit);
+  });
+</script>
+@endpush

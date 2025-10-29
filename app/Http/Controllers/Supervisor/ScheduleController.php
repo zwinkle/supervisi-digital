@@ -4,7 +4,6 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Schedule;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Dompdf\Dompdf;
@@ -69,12 +68,36 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
         $schools = $user->schools()->wherePivot('role','supervisor')->orderBy('name')->get();
-        $teacherIds = DB::table('school_user')
-            ->whereIn('school_id', $schools->pluck('id'))
-            ->where('role','teacher')
-            ->pluck('user_id');
-        $teachers = User::whereIn('id', $teacherIds)->orderBy('name')->get();
-        return view('supervisor.schedules.create', compact('schools','teachers'));
+        $teachersBySchool = collect();
+
+        if ($schools->isNotEmpty()) {
+            $teacherRecords = DB::table('school_user')
+                ->join('users', 'users.id', '=', 'school_user.user_id')
+                ->whereIn('school_user.school_id', $schools->pluck('id'))
+                ->where('school_user.role', 'teacher')
+                ->orderBy('users.name')
+                ->get([
+                    'school_user.school_id',
+                    'users.id as user_id',
+                    'users.name',
+                    'users.nip',
+                ]);
+
+            $teachersBySchool = $teacherRecords->groupBy('school_id')->map(function ($records) {
+                return $records->map(function ($record) {
+                    return [
+                        'id' => $record->user_id,
+                        'name' => $record->name,
+                        'nip' => $record->nip,
+                    ];
+                })->values();
+            });
+        }
+
+        return view('supervisor.schedules.create', [
+            'schools' => $schools,
+            'teachersBySchool' => $teachersBySchool,
+        ]);
     }
 
     public function store(Request $request)
@@ -123,12 +146,37 @@ class ScheduleController extends Controller
         $user = $request->user();
         if ($schedule->supervisor_id !== $user->id) abort(403);
         $schools = $user->schools()->wherePivot('role','supervisor')->orderBy('name')->get();
-        $teacherIds = DB::table('school_user')
-            ->whereIn('school_id', $schools->pluck('id'))
-            ->where('role','teacher')
-            ->pluck('user_id');
-        $teachers = User::whereIn('id', $teacherIds)->orderBy('name')->get();
-        return view('supervisor.schedules.edit', compact('schedule','schools','teachers'));
+        $teachersBySchool = collect();
+
+        if ($schools->isNotEmpty()) {
+            $teacherRecords = DB::table('school_user')
+                ->join('users', 'users.id', '=', 'school_user.user_id')
+                ->whereIn('school_user.school_id', $schools->pluck('id'))
+                ->where('school_user.role', 'teacher')
+                ->orderBy('users.name')
+                ->get([
+                    'school_user.school_id',
+                    'users.id as user_id',
+                    'users.name',
+                    'users.nip',
+                ]);
+
+            $teachersBySchool = $teacherRecords->groupBy('school_id')->map(function ($records) {
+                return $records->map(function ($record) {
+                    return [
+                        'id' => $record->user_id,
+                        'name' => $record->name,
+                        'nip' => $record->nip,
+                    ];
+                })->values();
+            });
+        }
+
+        return view('supervisor.schedules.edit', [
+            'schedule' => $schedule,
+            'schools' => $schools,
+            'teachersBySchool' => $teachersBySchool,
+        ]);
     }
 
     public function update(Request $request, Schedule $schedule)

@@ -9,6 +9,7 @@ use App\Support\TeacherOptions;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
@@ -102,18 +103,66 @@ class UserController extends Controller
     }
     public function index(Request $request)
     {
-        $q = trim((string)$request->get('q', ''));
-        $users = User::query()->with('schools')
-            ->when($q !== '', function ($query) use ($q) {
-                $query->where(function ($qq) use ($q) {
-                    $qq->where('name', 'like', "%{$q}%")
-                       ->orWhere('email', 'like', "%{$q}%");
-                });
-            })
-            ->orderBy('name')
-            ->paginate(20)
-            ->withQueryString();
-        return view('admin.users.index', compact('users', 'q'));
+        $filter = Str::lower((string) $request->input('filter', 'name'));
+        $allowedFilters = collect(['name', 'email', 'teacher_type', 'school']);
+        if (!$allowedFilters->contains($filter)) {
+            $filter = 'name';
+        }
+
+        $q = trim((string) $request->input('q', ''));
+        $search = $q !== '' ? Str::lower($q) : null;
+
+        $usersQuery = User::query()
+            ->with(['schools' => function ($relation) {
+                $relation->where('school_user.role', 'teacher')->orderBy('name');
+            }])
+            ->whereHas('schools', function ($relation) {
+                $relation->where('school_user.role', 'teacher');
+            });
+
+        if ($search !== null) {
+            $usersQuery->where(function ($query) use ($filter, $search) {
+                switch ($filter) {
+                    case 'email':
+                        $query->whereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
+                        break;
+                    case 'teacher_type':
+                        $query->where(function ($sub) use ($search) {
+                            $sub->whereRaw('LOWER(COALESCE(teacher_type, "")) LIKE ?', ["%{$search}%"])
+                                ->orWhereRaw('LOWER(COALESCE(subject, "")) LIKE ?', ["%{$search}%"])
+                                ->orWhereRaw('LOWER(COALESCE(class_name, "")) LIKE ?', ["%{$search}%"])
+                                ->orWhereRaw("LOWER(CASE WHEN teacher_type = 'subject' THEN 'guru mata pelajaran' WHEN teacher_type = 'class' THEN 'guru kelas' ELSE '' END) LIKE ?", ["%{$search}%"]);
+                        });
+                        break;
+                    case 'school':
+                        $query->whereHas('schools', function ($relation) use ($search) {
+                            $relation->where('school_user.role', 'teacher')
+                                ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                        });
+                        break;
+                    case 'name':
+                    default:
+                        $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                        break;
+                }
+            });
+        }
+
+        $users = $usersQuery->orderBy('name')->get();
+
+        if ($request->wantsJson()) {
+            return response()->json([
+                'html' => view('admin.users.partials.results', [
+                    'users' => $users,
+                ])->render(),
+            ]);
+        }
+
+        return view('admin.users.index', [
+            'users' => $users,
+            'q' => $q,
+            'filter' => $filter,
+        ]);
     }
 
     public function edit(User $user)
