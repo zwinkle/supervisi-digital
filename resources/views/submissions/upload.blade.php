@@ -35,22 +35,6 @@
         <x-back-button :href="$canEdit ? route('guru.schedules') : route('supervisor.schedules')" />
     </div>
 
-    @if ($errors->any())
-        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 shadow-sm shadow-rose-100/60">
-            <ul class="list-disc space-y-1 pl-4">
-                @foreach ($errors->all() as $error)
-                    <li>{{ $error }}</li>
-                @endforeach
-            </ul>
-        </div>
-    @endif
-
-    @if (session('success'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">
-            {{ session('success') }}
-        </div>
-    @endif
-
     <section class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-md shadow-slate-200/40">
         <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
@@ -413,7 +397,6 @@
             </header>
             <form id="upload-form" action="{{ route('guru.submissions.store', $schedule) }}" method="post" enctype="multipart/form-data" class="space-y-6">
                 @csrf
-                <input type="hidden" name="video_duration_ms" id="video-duration-ms" value="">
 
                 <div class="grid gap-6 md:grid-cols-2">
                     <label class="group flex cursor-pointer flex-col gap-3 rounded-2xl border-2 border-dashed border-indigo-200 bg-[#F9FAFB] p-6 text-sm text-slate-500 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-50/40">
@@ -446,15 +429,14 @@
                         <input type="file" name="administrasi" accept="application/pdf,.doc,.docx" class="hidden" data-file-input="administrasi" />
                     </label>
 
-                    <label class="group flex cursor-pointer flex-col gap-3 rounded-2xl border-2 border-dashed border-indigo-200 bg-[#F9FAFB] p-6 text-sm text-slate-500 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-50/40">
+                    <div class="flex flex-col gap-3 rounded-2xl border-2 border-dashed border-indigo-200 bg-[#F9FAFB] p-6 text-sm text-slate-500 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-50/40">
                         <span class="inline-flex items-center gap-2 text-sm font-semibold text-slate-600">
                             @include('layouts.partials.icon', ['name' => 'video', 'classes' => 'h-5 w-5 text-indigo-500'])
-                            Video (MP4) • durasi ± 30 menit
+                            Video Link (YouTube/Google Drive) • durasi ± 30 menit
                         </span>
-                        <span class="text-xs text-slate-400">Durasi diverifikasi otomatis. Metadata Drive akan diperbarui setelah unggah.</span>
-                        <span class="hidden text-xs font-medium text-indigo-500" data-file-label="video"></span>
-                        <input id="input-video" type="file" name="video" accept="video/mp4" class="hidden" data-file-input="video" />
-                    </label>
+                        <span class="text-xs text-slate-400">Paste link video dari YouTube atau Google Drive. Pastikan video dapat diakses oleh supervisor.</span>
+                        <input id="input-video-link" type="url" name="video_link" placeholder="https://youtube.com/watch?v=... atau https://drive.google.com/file/d/..." class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+                    </div>
                 </div>
 
                 <div class="flex flex-col gap-3 rounded-xl border border-slate-200 bg-[#F9FAFB] px-4 py-3 text-xs text-slate-500">
@@ -549,28 +531,6 @@
                 function fmtSize(size){ if(!size) return '-'; const mb = size/1024/1024; return mb>=1? mb.toFixed(2)+' MB' : Math.round(size/1024)+' KB'; }
                 function fmtDur(ms){ if(!ms) return '-'; const sec = Math.round(ms/1000); const m = Math.floor(sec/60); const s = String(sec%60).padStart(2,'0'); return m+':'+s; }
                 function fmtPages(p){ if(!p) return '-'; return p+' halaman'; }
-                // Capture client-side duration to hidden input
-                (function(){
-                  const inputVideo = document.getElementById('input-video');
-                  const hiddenDur = document.getElementById('video-duration-ms');
-                  if(!inputVideo || !hiddenDur) return;
-                  inputVideo.addEventListener('change', ()=>{
-                    const file = inputVideo.files && inputVideo.files[0];
-                    if(!file){ hiddenDur.value=''; return; }
-                    try{
-                      const url = URL.createObjectURL(file);
-                      const v = document.createElement('video');
-                      v.preload = 'metadata';
-                      v.src = url;
-                      v.onloadedmetadata = function(){
-                        URL.revokeObjectURL(url);
-                        const seconds = Math.round(v.duration || 0);
-                        hiddenDur.value = String(seconds*1000);
-                      };
-                      setTimeout(()=>{ try{ URL.revokeObjectURL(url);}catch(_){} }, 10000);
-                    }catch(_){ hiddenDur.value=''; }
-                  });
-                })();
                 (function(){
                   const inputs = document.querySelectorAll('[data-file-input]');
                   inputs.forEach(input => {
@@ -733,7 +693,7 @@
                 // Delete confirmation modal
                 const modal = document.createElement('div');
                 modal.id = 'delete-modal';
-                modal.className = 'fixed inset-0 z-50 hidden items-center justify-center';
+                modal.className = 'fixed inset-0 z-[100] hidden items-center justify-center';
                 modal.innerHTML = '<div class="absolute inset-0 bg-slate-900/40 backdrop-blur-sm"></div>'+
                   '<div class="relative w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl shadow-slate-200/60">'+
                   '<h3 class="text-lg font-semibold text-slate-900">Konfirmasi Hapus</h3>'+ 
@@ -754,33 +714,50 @@
                   document.getElementById('delete-modal-text').textContent = 'Apakah Anda yakin ingin menghapus '+(kind?kind+' ':'')+'?';
                   modal.classList.remove('hidden');
                   modal.classList.add('flex');
+                  document.body.classList.add('is-uploading'); // Hide sidebar toggle
                 });
                 document.getElementById('btn-cancel-del').addEventListener('click', ()=>{
                   modal.classList.add('hidden');
                   modal.classList.remove('flex');
+                  document.body.classList.remove('is-uploading'); // Show sidebar toggle
                   pendingForm = null;
                 });
                 const btnConfirm = document.getElementById('btn-confirm-del');
+                let isDeleting = false; // Prevent double submission
                 btnConfirm.addEventListener('click', ()=>{
-                  if(!pendingForm) return;
+                  if(!pendingForm || isDeleting) return;
+                  
+                  // Set deleting flag
+                  isDeleting = true;
+                  
                   // prevent double click and give small feedback
                   btnConfirm.setAttribute('disabled','disabled');
                   btnConfirm.textContent = 'Menghapus...';
+                  
                   // hide modal before submitting to avoid overlay glitch
                   modal.classList.add('hidden');
                   modal.classList.remove('flex');
+                  
                   // show overlay with delete message
                   const overlay = document.getElementById('upload-overlay');
                   const title = document.getElementById('overlay-title');
                   if(title){ title.textContent = 'Menghapus berkas...'; }
-                  if(overlay){ overlay.classList.remove('hidden'); overlay.classList.add('flex'); }
-                  document.body.classList.add('is-uploading');
-                  // prefer requestSubmit when available
-                  if (typeof pendingForm.requestSubmit === 'function') {
-                    pendingForm.requestSubmit();
-                  } else {
-                    pendingForm.submit();
+                  if(overlay){ 
+                    overlay.classList.remove('hidden'); 
+                    overlay.classList.add('flex'); 
                   }
+                  document.body.classList.add('is-uploading');
+                  
+                  // Small delay to ensure overlay is visible
+                  setTimeout(() => {
+                    // prefer requestSubmit when available
+                    if (typeof pendingForm.requestSubmit === 'function') {
+                      pendingForm.requestSubmit();
+                    } else {
+                      pendingForm.submit();
+                    }
+                    pendingForm = null;
+                  }, 100);
                 });
                 apply();
             })();

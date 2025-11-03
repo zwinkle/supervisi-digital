@@ -75,13 +75,37 @@ class GoogleDriveService
      */
     protected function applyAccessToken($token): void
     {
+        // Ensure token is in the correct format
+        if (is_string($token)) {
+            // If it's a JSON string, decode it first
+            $decoded = json_decode($token, true);
+            if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $token = $decoded;
+            } else {
+                // If it's a plain access token string, wrap it in array
+                $token = [
+                    'access_token' => $token,
+                    'token_type' => 'Bearer',
+                ];
+            }
+        }
+        
+        // Ensure required fields exist
+        if (is_array($token) && !isset($token['token_type'])) {
+            $token['token_type'] = 'Bearer';
+        }
+        
         try {
             $this->client->setAccessToken($token);
         } catch (\InvalidArgumentException $e) {
-            if (stripos($e->getMessage(), 'Invalid token format') !== false) {
-                $payload = is_array($token) ? json_encode($token, JSON_THROW_ON_ERROR) : (string) $token;
-                $this->client->setAccessToken($payload);
-                return;
+            // Last resort: try as JSON string
+            if (is_array($token)) {
+                try {
+                    $this->client->setAccessToken(json_encode($token, JSON_THROW_ON_ERROR));
+                    return;
+                } catch (\Throwable $jsonError) {
+                    // If JSON encoding also fails, throw original error
+                }
             }
             throw $e;
         }

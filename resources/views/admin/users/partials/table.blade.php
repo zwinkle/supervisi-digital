@@ -1,6 +1,20 @@
 <div class="mt-6 space-y-4 md:hidden" id="users-mobile-list">
   @forelse ($users as $u)
-    @php($role = 'Guru')
+    @php
+      $roles = [];
+      if ($u->is_admin) {
+        $roles[] = 'Admin';
+      }
+      $supervisorSchools = $u->schools->where('pivot.role', 'supervisor');
+      if ($supervisorSchools->isNotEmpty()) {
+        $roles[] = 'Supervisor';
+      }
+      $teacherSchools = $u->schools->where('pivot.role', 'teacher');
+      if ($teacherSchools->isNotEmpty()) {
+        $roles[] = 'Guru';
+      }
+      $role = $roles ? implode(', ', $roles) : 'Belum ada peran';
+    @endphp
     <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
       <div class="flex items-start gap-3">
         <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-base font-semibold text-indigo-500">{{ Str::upper(Str::substr($u->name, 0, 2)) }}</div>
@@ -92,7 +106,21 @@
     </thead>
     <tbody class="divide-y divide-slate-100 text-slate-600">
       @forelse ($users as $u)
-        @php($role = 'Guru')
+        @php
+          $roles = [];
+          if ($u->is_admin) {
+            $roles[] = 'Admin';
+          }
+          $supervisorSchools = $u->schools->where('pivot.role', 'supervisor');
+          if ($supervisorSchools->isNotEmpty()) {
+            $roles[] = 'Supervisor';
+          }
+          $teacherSchools = $u->schools->where('pivot.role', 'teacher');
+          if ($teacherSchools->isNotEmpty()) {
+            $roles[] = 'Guru';
+          }
+          $role = $roles ? implode(', ', $roles) : 'Belum ada peran';
+        @endphp
         <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
           <td class="px-5 py-4 align-top">
             <div class="flex items-start gap-3">

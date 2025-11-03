@@ -114,11 +114,8 @@ class UserController extends Controller
 
         $usersQuery = User::query()
             ->with(['schools' => function ($relation) {
-                $relation->where('school_user.role', 'teacher')->orderBy('name');
-            }])
-            ->whereHas('schools', function ($relation) {
-                $relation->where('school_user.role', 'teacher');
-            });
+                $relation->orderBy('name');
+            }]);
 
         if ($search !== null) {
             $usersQuery->where(function ($query) use ($filter, $search) {
@@ -136,8 +133,7 @@ class UserController extends Controller
                         break;
                     case 'school':
                         $query->whereHas('schools', function ($relation) use ($search) {
-                            $relation->where('school_user.role', 'teacher')
-                                ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                            $relation->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
                         });
                         break;
                     case 'name':
