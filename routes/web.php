@@ -105,8 +105,10 @@ Route::middleware('auth')->group(function () {
             ->middleware('requires_google_linked')->name('guru.submissions.store');
         Route::get('/schedules/{schedule}/submit/status', [SubmissionController::class, 'status'])
             ->middleware('requires_google_linked')->name('guru.submissions.status');
-        Route::post('/schedules/{schedule}/submit/delete/{kind}', [SubmissionController::class, 'deleteFile'])
+        Route::delete('/schedules/{schedule}/submit/delete/{kind}', [SubmissionController::class, 'deleteFile'])
             ->name('guru.submissions.delete');
+        Route::delete('/schedules/{schedule}/submit/documents/{document}', [SubmissionController::class, 'deleteDocument'])
+            ->name('guru.submissions.documents.destroy');
     });
 
     // SUPERVISOR routes

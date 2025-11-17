@@ -18,14 +18,44 @@ class InvitationController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+        $q = $request->input('q');
+        $status = $request->input('status', 'all');
+
         $schoolIds = $user->schools()->wherePivot('role','supervisor')->pluck('schools.id');
-        $invitations = Invitation::where('role','teacher')
+        $query = Invitation::where('role','teacher')
             ->whereJsonLength('school_ids', '>=', 1)
             ->where(function($q) use ($schoolIds){
-                $q->whereIn('school_ids->0', $schoolIds); // simple contains first id
-            })
-            ->orderByDesc('created_at')
-            ->paginate(20);
+                $q->whereIn('school_ids->0', $schoolIds);
+            });
+
+        // Only apply filters when there's a search query
+        if ($q && trim($q) !== '') {
+            $query->where('email', 'LIKE', '%' . $q . '%');
+        }
+
+        if ($status === 'active') {
+            $query->whereNull('used_at')
+                  ->where(function ($query) {
+                      $query->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                  });
+        } elseif ($status === 'used') {
+            $query->whereNotNull('used_at');
+        } elseif ($status === 'expired') {
+            $query->whereNull('used_at')
+                  ->whereNotNull('expires_at')
+                  ->where('expires_at', '<=', now());
+        }
+
+        $invitations = $query->orderByDesc('created_at')->paginate(20);
+
+        if ($request->wantsJson()) {
+            $html = view('supervisor.invitations.index', compact('invitations'))->render();
+            preg_match('/<div id="supervisor-invitations-results">(.*?)<\/div>\s*<\/div>\s*<\/div>\s*@push/s', $html, $matches);
+            $resultsHtml = $matches[1] ?? '';
+            return response()->json(['html' => $resultsHtml]);
+        }
+
         return view('supervisor.invitations.index', compact('invitations'));
     }
 

@@ -13,10 +13,28 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $schedules = Schedule::with(['school','evaluations'])
-            ->where('teacher_id', $user->id)
-            ->orderByDesc('date')
-            ->get();
+        $month = $request->input('month');
+        $year = $request->input('year', date('Y'));
+
+        $query = Schedule::with(['school','evaluations'])
+            ->where('teacher_id', $user->id);
+
+        if ($month && $year) {
+            $query->whereYear('date', $year)
+                  ->whereMonth('date', $month);
+        } elseif ($year) {
+            $query->whereYear('date', $year);
+        }
+
+        $schedules = $query->orderByDesc('date')->get();
+
+        if ($request->wantsJson()) {
+            $html = view('schedules.teacher', compact('schedules'))->render();
+            preg_match('/<div class="space-y-4" id="teacher-schedules-results">(.*?)<\/div>\s*<\/div>\s*@push/s', $html, $matches);
+            $resultsHtml = $matches[1] ?? '';
+            return response()->json(['html' => $resultsHtml]);
+        }
+
         return view('schedules.teacher', compact('schedules'));
     }
 

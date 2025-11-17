@@ -108,12 +108,7 @@
                                     </div>
                                 @endif
                             </div>
-                            @php($hasSubmissionFiles = $schedule->submission && (
-                                $schedule->submission->rppFile ||
-                                $schedule->submission->videoFile ||
-                                $schedule->submission->asesmenFile ||
-                                $schedule->submission->administrasiFile
-                            ))
+                            @php($hasSubmissionFiles = $schedule->submission && ((optional($schedule->submission->documents)->count() ?? 0) > 0 || optional($schedule->submission->videoFile)->id))
                             @if($hasSubmissionFiles)
                                 <a href="{{ route('supervisor.submissions.show', $schedule) }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
                                     @include('layouts.partials.icon', ['name' => 'document', 'classes' => 'h-4 w-4 text-indigo-500'])

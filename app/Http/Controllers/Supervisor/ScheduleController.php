@@ -14,18 +14,43 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $schedules = Schedule::with([
+        $q = $request->input('q');
+        $filter = $request->input('filter', 'all');
+
+        $query = Schedule::with([
                 'school',
                 'teacher',
-                'submission.rppFile',
+                'submission.documents.file',
                 'submission.videoFile',
-                'submission.asesmenFile',
-                'submission.administrasiFile',
                 'evaluations',
             ])
-            ->where('supervisor_id', $user->id)
-            ->orderByDesc('date')
-            ->get();
+            ->where('supervisor_id', $user->id);
+
+        // Only apply filters when there's a search query
+        if ($q && trim($q) !== '') {
+            $query->where(function ($query) use ($q, $filter) {
+                if ($filter === 'teacher' || $filter === 'all') {
+                    $query->orWhereHas('teacher', function ($teacherQuery) use ($q) {
+                        $teacherQuery->where('name', 'LIKE', '%' . $q . '%');
+                    });
+                }
+                if ($filter === 'school' || $filter === 'all') {
+                    $query->orWhereHas('school', function ($schoolQuery) use ($q) {
+                        $schoolQuery->where('name', 'LIKE', '%' . $q . '%');
+                    });
+                }
+            });
+        }
+
+        $schedules = $query->orderByDesc('date')->get();
+
+        if ($request->wantsJson()) {
+            $html = view('schedules.supervisor', compact('schedules'))->render();
+            preg_match('/<div class="space-y-4" id="supervisor-schedules-results">(.*?)<\/div>\s*<\/div>\s*@push/s', $html, $matches);
+            $resultsHtml = $matches[1] ?? '';
+            return response()->json(['html' => $resultsHtml]);
+        }
+
         return view('schedules.supervisor', compact('schedules'));
     }
 
@@ -33,7 +58,7 @@ class ScheduleController extends Controller
     {
         $user = $request->user();
         if ($schedule->supervisor_id !== $user->id) abort(403);
-        $schedule->load(['school','teacher','evaluations','submission.rppFile','submission.videoFile','submission.asesmenFile']);
+        $schedule->load(['school','teacher','evaluations','submission.documents.file','submission.videoFile']);
         $evalByType = ($schedule->evaluations ?? collect())->keyBy('type');
         $cards = [
             'rpp' => [

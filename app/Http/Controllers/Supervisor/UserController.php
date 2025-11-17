@@ -34,7 +34,8 @@ class UserController extends Controller
                         ->where('school_user.role', 'teacher');
                 });
 
-            if ($search !== null) {
+            // Only apply filters when there's a search query
+            if ($search !== null && $search !== '') {
                 $teachersQuery->where(function ($query) use ($filter, $search, $schoolIds) {
                     switch ($filter) {
                         case 'email':

@@ -22,16 +22,30 @@
         </div>
     @endif
 
-    <div class="space-y-4">
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40">
+        <form id="supervisor-schedules-search" class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex w-full flex-col gap-2 md:flex-row md:gap-3">
+                <div class="relative w-full md:max-w-sm">
+                    <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                        @include('layouts.partials.icon', ['name' => 'search', 'classes' => 'h-4 w-4'])
+                    </span>
+                    <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari nama guru atau sekolah" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
+                </div>
+                <select name="filter" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:w-48">
+                    <option value="all" @selected(request('filter', 'all') === 'all')>Semua</option>
+                    <option value="teacher" @selected(request('filter') === 'teacher')>Nama Guru</option>
+                    <option value="school" @selected(request('filter') === 'school')>Sekolah</option>
+                </select>
+            </div>
+            <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
+        </form>
+    </div>
+
+    <div class="space-y-4" id="supervisor-schedules-results">
         @forelse ($schedules as $schedule)
             @php($badge = $schedule->computedBadge())
             @php($evalByType = ($schedule->evaluations ?? collect())->keyBy('type'))
-            @php($hasFiles = $schedule->submission && (
-                $schedule->submission->rppFile ||
-                $schedule->submission->videoFile ||
-                $schedule->submission->asesmenFile ||
-                $schedule->submission->administrasiFile
-            ))
+            @php($hasFiles = $schedule->submission && ((optional($schedule->submission->documents)->count() ?? 0) > 0 || optional($schedule->submission->videoFile)->id))
             @php($isDue = \Carbon\Carbon::parse($schedule->date)->isToday() || \Carbon\Carbon::parse($schedule->date)->isPast())
             <article class="rounded-2xl border border-slate-200 bg-white px-6 py-5 shadow-md shadow-slate-200/50 transition-all duration-300 ease-in-out hover:-translate-y-0.5 hover:shadow-lg">
                 <div class="flex flex-col gap-6 lg:flex-row lg:justify-between">
@@ -151,4 +165,72 @@
         @endforelse
     </div>
 </div>
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('supervisor-schedules-search');
+    const results = document.getElementById('supervisor-schedules-results');
+    if (!form || !results) {
+      return;
+    }
+
+    let controller = null;
+    let debounceTimer = null;
+
+    const submitAjax = function () {
+      const formData = new FormData(form);
+      const params = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          params.append(key, value);
+        }
+      }
+
+      if (controller) {
+        controller.abort();
+      }
+      controller = new AbortController();
+
+      results.style.opacity = '0.6';
+
+      fetch(`{{ route('supervisor.schedules') }}` + (params.toString() ? `?${params.toString()}` : ''), {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Gagal memuat data');
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (data.html) {
+            results.innerHTML = data.html;
+          }
+        })
+        .catch(function (error) {
+          if (error.name === 'AbortError') {
+            return;
+          }
+          console.error(error);
+        })
+        .finally(function () {
+          results.style.opacity = '1';
+        });
+    };
+
+    const scheduleSubmit = function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(submitAjax, 600);
+    };
+
+    form.addEventListener('input', scheduleSubmit);
+    form.addEventListener('change', scheduleSubmit);
+  });
+</script>
+@endpush
 @endsection

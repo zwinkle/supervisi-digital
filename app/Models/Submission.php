@@ -12,10 +12,7 @@ class Submission extends Model
     protected $fillable = [
         'schedule_id',
         'teacher_id',
-        'rpp_file_id',
         'video_file_id',
-        'asesmen_file_id',
-        'administrasi_file_id',
         'submitted_at',
     ];
 
@@ -33,9 +30,9 @@ class Submission extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
-    public function rppFile()
+    public function documents()
     {
-        return $this->belongsTo(File::class, 'rpp_file_id');
+        return $this->hasMany(SubmissionDocument::class);
     }
 
     public function videoFile()
@@ -43,13 +40,21 @@ class Submission extends Model
         return $this->belongsTo(File::class, 'video_file_id');
     }
 
-    public function asesmenFile()
+    public function documentsFor(string $category)
     {
-        return $this->belongsTo(File::class, 'asesmen_file_id');
+        if ($this->relationLoaded('documents')) {
+            return $this->documents->where('category', $category);
+        }
+
+        return $this->documents()->where('category', $category)->get();
     }
 
-    public function administrasiFile()
+    public function hasDocumentsFor(string $category): bool
     {
-        return $this->belongsTo(File::class, 'administrasi_file_id');
+        if ($this->relationLoaded('documents')) {
+            return $this->documents->where('category', $category)->isNotEmpty();
+        }
+
+        return $this->documents()->where('category', $category)->exists();
     }
 }

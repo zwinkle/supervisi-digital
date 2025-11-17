@@ -117,7 +117,8 @@ class UserController extends Controller
                 $relation->orderBy('name');
             }]);
 
-        if ($search !== null) {
+        // Only apply filters when there's a search query
+        if ($search !== null && $search !== '') {
             $usersQuery->where(function ($query) use ($filter, $search) {
                 switch ($filter) {
                     case 'email':

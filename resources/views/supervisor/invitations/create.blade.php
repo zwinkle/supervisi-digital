@@ -10,7 +10,7 @@
         <p class="text-sm text-slate-500">Kirim kredensial awal bagi guru untuk bergabung dalam ekosistem supervisi digital.</p>
       </div>
     </div>
-    <a href="{{ route('supervisor.invitations.index') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+    <a href="{{ route('supervisor.invitations.index') }}" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-md shadow-slate-200/60 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
       @include('layouts.partials.icon', ['name' => 'inbox', 'classes' => 'h-4 w-4 text-indigo-500'])
       Daftar Undangan
     </a>

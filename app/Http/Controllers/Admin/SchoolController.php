@@ -22,7 +22,8 @@ class SchoolController extends Controller
 
         $schoolsQuery = School::query();
 
-        if ($search !== null) {
+        // Only apply filters when there's a search query
+        if ($search !== null && $search !== '') {
             $schoolsQuery->where(function ($query) use ($filter, $search) {
                 switch ($filter) {
                     case 'address':

@@ -52,7 +52,7 @@ class Schedule extends Model
 
     public function submission()
     {
-        return $this->hasOne(Submission::class);
+        return $this->hasOne(Submission::class)->with(['documents.file','videoFile']);
     }
 
     public function notes()
@@ -108,28 +108,30 @@ class Schedule extends Model
     public function hasSubmissionFiles(): bool
     {
         $submission = $this->submission;
-        if (!$submission) return false;
-        return (bool) optional($submission->rppFile)->id
-            && (bool) optional($submission->videoFile)->id
-            && (bool) optional($submission->asesmenFile)->id
-            && (bool) optional($submission->administrasiFile)->id;
+        if (!$submission) {
+            return false;
+        }
+
+        return $submission->hasDocumentsFor('rpp')
+            && $submission->hasDocumentsFor('asesmen')
+            && $submission->hasDocumentsFor('administrasi')
+            && (bool) optional($submission->videoFile)->id;
     }
 
     public function hasSubmissionFor(string $type): bool
     {
         $submission = $this->submission;
-        if (!$submission) return false;
-
-        switch ($type) {
-            case 'rpp':
-                return (bool) optional($submission->rppFile)->id;
-            case 'pembelajaran':
-                return (bool) optional($submission->videoFile)->id;
-            case 'asesmen':
-                return (bool) optional($submission->asesmenFile)->id;
+        if (!$submission) {
+            return false;
         }
 
-        return false;
+        return match ($type) {
+            'rpp' => $submission->hasDocumentsFor('rpp'),
+            'asesmen' => $submission->hasDocumentsFor('asesmen'),
+            'administrasi' => $submission->hasDocumentsFor('administrasi'),
+            'pembelajaran' => (bool) optional($submission->videoFile)->id,
+            default => false,
+        };
     }
 
     public function checkAndMarkCompleted(): void
@@ -137,10 +139,8 @@ class Schedule extends Model
         if ($this->isCompleted()) return;
         $this->loadMissing([
             'evaluations',
-            'submission.rppFile',
+            'submission.documents.file',
             'submission.videoFile',
-            'submission.asesmenFile',
-            'submission.administrasiFile',
         ]);
         if ($this->hasAllEvaluations() && $this->hasSubmissionFiles()) {
             $this->evaluated_at = Carbon::now();

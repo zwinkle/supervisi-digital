@@ -15,9 +15,41 @@ use App\Mail\InviteMail;
 
 class InvitationController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $invitations = Invitation::query()->orderByDesc('created_at')->paginate(20);
+        $q = $request->input('q');
+        $status = $request->input('status', 'all');
+
+        $query = Invitation::query();
+
+        // Only apply filters when there's a search query
+        if ($q && trim($q) !== '') {
+            $query->where('email', 'LIKE', '%' . $q . '%');
+        }
+
+        if ($status === 'active') {
+            $query->whereNull('used_at')
+                  ->where(function ($query) {
+                      $query->whereNull('expires_at')
+                            ->orWhere('expires_at', '>', now());
+                  });
+        } elseif ($status === 'used') {
+            $query->whereNotNull('used_at');
+        } elseif ($status === 'expired') {
+            $query->whereNull('used_at')
+                  ->whereNotNull('expires_at')
+                  ->where('expires_at', '<=', now());
+        }
+
+        $invitations = $query->orderByDesc('created_at')->paginate(20);
+
+        if ($request->wantsJson()) {
+            $html = view('admin.invitations.index', compact('invitations'))->render();
+            preg_match('/<div id="invitations-results">(.*?)<\/div>\s*<\/div>\s*<\/div>\s*@push/s', $html, $matches);
+            $resultsHtml = $matches[1] ?? '';
+            return response()->json(['html' => $resultsHtml]);
+        }
+
         return view('admin.invitations.index', compact('invitations'));
     }
     public function create()

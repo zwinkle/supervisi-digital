@@ -113,7 +113,7 @@
 
     const scheduleSubmit = function () {
       clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(submitAjax, 250);
+      debounceTimer = setTimeout(submitAjax, 600);
     };
 
     form.addEventListener('input', scheduleSubmit);

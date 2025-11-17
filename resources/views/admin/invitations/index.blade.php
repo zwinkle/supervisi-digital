@@ -34,7 +34,26 @@
       ];
   }))
 
-  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40">
+  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40" id="invitations-container">
+    <form id="invitations-search-form" class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+      <div class="flex w-full flex-col gap-2 md:flex-row md:gap-3">
+        <div class="relative w-full md:max-w-sm">
+          <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+            @include('layouts.partials.icon', ['name' => 'search', 'classes' => 'h-4 w-4'])
+          </span>
+          <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari email undangan" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
+        </div>
+        <select name="status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:w-48">
+          <option value="all" @selected(request('status', 'all') === 'all')>Semua Status</option>
+          <option value="active" @selected(request('status') === 'active')>Aktif</option>
+          <option value="used" @selected(request('status') === 'used')>Digunakan</option>
+          <option value="expired" @selected(request('status') === 'expired')>Kedaluwarsa</option>
+        </select>
+      </div>
+      <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
+    </form>
+
+    <div id="invitations-results">
     <div class="space-y-4 px-5 py-6 md:hidden">
       @forelse ($invitationEntries as $entry)
         @php($inv = $entry['model'])
@@ -237,6 +256,76 @@
         {{ $invitations->links('vendor.pagination.tailwind') }}
       </div>
     @endif
+    </div>
   </div>
 </div>
+
+@push('scripts')
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const form = document.getElementById('invitations-search-form');
+    const container = document.getElementById('invitations-container');
+    const results = document.getElementById('invitations-results');
+    if (!form || !container || !results) {
+      return;
+    }
+
+    let controller = null;
+    let debounceTimer = null;
+
+    const submitAjax = function () {
+      const formData = new FormData(form);
+      const params = new URLSearchParams();
+      for (const [key, value] of formData.entries()) {
+        if (value) {
+          params.append(key, value);
+        }
+      }
+
+      if (controller) {
+        controller.abort();
+      }
+      controller = new AbortController();
+
+      container.classList.add('opacity-60');
+
+      fetch(`{{ route('admin.invitations.index') }}` + (params.toString() ? `?${params.toString()}` : ''), {
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest',
+          'Accept': 'application/json',
+        },
+        signal: controller.signal,
+      })
+        .then(function (response) {
+          if (!response.ok) {
+            throw new Error('Gagal memuat data');
+          }
+          return response.json();
+        })
+        .then(function (data) {
+          if (data.html) {
+            results.innerHTML = data.html;
+          }
+        })
+        .catch(function (error) {
+          if (error.name === 'AbortError') {
+            return;
+          }
+          console.error(error);
+        })
+        .finally(function () {
+          container.classList.remove('opacity-60');
+        });
+    };
+
+    const scheduleSubmit = function () {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(submitAjax, 600);
+    };
+
+    form.addEventListener('input', scheduleSubmit);
+    form.addEventListener('change', scheduleSubmit);
+  });
+</script>
+@endpush
 @endsection

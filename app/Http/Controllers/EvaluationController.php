@@ -25,7 +25,7 @@ class EvaluationController extends Controller
         // Supervisor must own the schedule
         if ($schedule->supervisor_id !== $user->id) abort(403);
 
-        $schedule->loadMissing(['submission.rppFile','submission.videoFile','submission.asesmenFile']);
+        $schedule->loadMissing(['submission.documents.file','submission.videoFile']);
         if (!$schedule->hasSubmissionFor($type)) {
             return redirect()->route('supervisor.schedules.assessment', $schedule)
                 ->with('error', $this->requirementMessages[$type] ?? 'Berkas pendukung belum tersedia.');
@@ -52,7 +52,7 @@ class EvaluationController extends Controller
         if (!in_array($type, $this->types, true)) abort(404);
         if ($schedule->supervisor_id !== $user->id) abort(403);
 
-        $schedule->loadMissing(['submission.rppFile','submission.videoFile','submission.asesmenFile']);
+        $schedule->loadMissing(['submission.documents.file','submission.videoFile']);
         if (!$schedule->hasSubmissionFor($type)) {
             return redirect()->route('supervisor.schedules.assessment', $schedule)
                 ->with('error', $this->requirementMessages[$type] ?? 'Berkas pendukung belum tersedia.');
