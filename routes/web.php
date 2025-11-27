@@ -40,11 +40,12 @@ Route::middleware('auth')->group(function () {
 
     // Simple profile page for Google linking
     Route::get('/profile', function () {
-        $user = auth()->user();
+        $user = Auth::user();
         return view('profile.index', compact('user'));
     })->name('profile.index');
     Route::post('/profile/disconnect-google', function () {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         $user->google_id = null;
         $user->google_email = null;
         $user->google_access_token = null;
@@ -56,9 +57,7 @@ Route::middleware('auth')->group(function () {
 
     // ADMIN routes
     Route::prefix('admin')->middleware('is_admin')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('dashboard.admin');
-        })->name('admin.dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('admin.dashboard');
 
         // Users list/edit/deactivate
         Route::get('/users', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('admin.users.index');
@@ -93,9 +92,7 @@ Route::middleware('auth')->group(function () {
 
     // GURU routes
     Route::prefix('guru')->middleware('is_teacher')->group(function () {
-        Route::get('/dashboard', function () {
-            return view('dashboard.guru');
-        })->name('guru.dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\Guru\DashboardController::class, 'index'])->name('guru.dashboard');
         Route::get('/schedules', [\App\Http\Controllers\Guru\ScheduleController::class, 'index'])->name('guru.schedules');
         Route::get('/schedules/{schedule}/export', [\App\Http\Controllers\Guru\ScheduleController::class, 'export'])->name('guru.schedules.export');
         // Upload submission requires linked Google
@@ -113,9 +110,7 @@ Route::middleware('auth')->group(function () {
 
     // SUPERVISOR routes
     Route::prefix('supervisor')->middleware(['is_supervisor','requires_google_linked'])->group(function () {
-        Route::get('/dashboard', function () {
-            return view('dashboard.supervisor');
-        })->name('supervisor.dashboard');
+        Route::get('/dashboard', [\App\Http\Controllers\Supervisor\DashboardController::class, 'index'])->name('supervisor.dashboard');
 
         // Schedules (controller)
         Route::get('/schedules', [\App\Http\Controllers\Supervisor\ScheduleController::class, 'index'])->name('supervisor.schedules');
@@ -164,7 +159,8 @@ if (app()->environment('local')) {
 
     // Create a sample schedule for the current user (as teacher) if none exists
     Route::post('/debug/create-sample-schedule', function () {
-        $user = auth()->user();
+        /** @var \App\Models\User $user */
+        $user = Auth::user();
         if (!$user) return abort(401);
         $school = School::first();
         if (!$school) {

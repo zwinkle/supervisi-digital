@@ -23,6 +23,116 @@
         </a>
     </div>
 
+    @if (session('success'))
+        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-600 shadow-sm shadow-rose-100/60">{{ session('error') }}</div>
+    @endif
+
+    <!-- Statistics Section -->
+    <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+        <!-- Platform Usage -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Penggunaan Platform</p>
+                    <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $platformUsage }}</p>
+                </div>
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+                        <path d="M3.5 6.5h17" />
+                        <path d="M3.5 12h17" />
+                        <path d="M3.5 17.5h11" />
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+                <span class="flex items-center text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                        <path d="M16 6l6 6-6 6" />
+                        <path d="M4 12h16" />
+                    </svg>
+                    <span class="ml-1">{{ $platformTrend }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Personal Activity -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Aktivitas Personal</p>
+                    <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $personalActivity }}</p>
+                </div>
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+                        <path d="M12 6.5v11" />
+                        <path d="m8.5 10 3.5-3.5 3.5 3.5" />
+                        <path d="M6 17.5h12" />
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+                <span class="flex items-center text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                        <path d="M16 6l6 6-6 6" />
+                        <path d="M4 12h16" />
+                    </svg>
+                    <span class="ml-1">{{ $activityTrend }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Upcoming Events -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Event Mendatang</p>
+                    <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $upcomingEvents }}</p>
+                </div>
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+                        <rect x="3.5" y="5.5" width="17" height="13" rx="2" />
+                        <path d="M3.5 9.5h17" />
+                        <path d="M8.5 3.5v3" />
+                        <path d="M15.5 3.5v3" />
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+                <span class="flex items-center text-slate-500">
+                    <span class="ml-1">{{ $eventsTrend }}</span>
+                </span>
+            </div>
+        </div>
+
+        <!-- Completion Rate -->
+        <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-slate-500">Tingkat Penyelesaian</p>
+                    <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $completionRate }}%</p>
+                </div>
+                <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-6 w-6">
+                        <path d="M12 3.5v17" />
+                        <path d="m5.5 10 6.5-6.5 6.5 6.5" />
+                    </svg>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm">
+                <span class="flex items-center text-emerald-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                        <path d="M16 6l6 6-6 6" />
+                        <path d="M4 12h16" />
+                    </svg>
+                    <span class="ml-1">{{ $completionTrend }}</span>
+                </span>
+            </div>
+        </div>
+    </div>
+
     <div class="grid gap-6 lg:grid-cols-2">
         <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
             <div class="flex items-start justify-between gap-4">
@@ -83,7 +193,24 @@
                 @if (session('error'))
                     <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-rose-600 shadow-sm shadow-rose-100/60">{{ session('error') }}</div>
                 @endif
-                <p class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Selamat datang di Supervisi Digital. Pantau jadwal dan progres supervisi secara menyeluruh.</p>
+                @foreach($recentUpdates as $update)
+                <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                    <div class="flex items-start gap-3">
+                        <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500">
+                            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
+                                <path d="M12 6.5v11" />
+                                <path d="m8.5 10 3.5-3.5 3.5 3.5" />
+                                <path d="M6 17.5h12" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <p class="text-sm font-medium text-slate-900">{{ $update['title'] }}</p>
+                            <p class="text-xs text-slate-500">{{ $update['description'] }}</p>
+                            <p class="mt-1 text-xs text-slate-400">{{ $update['time'] }}</p>
+                        </div>
+                    </div>
+                </div>
+                @endforeach
             </div>
         </div>
     </div>

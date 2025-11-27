@@ -19,6 +19,84 @@
     <div class="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-600 shadow-sm shadow-rose-100/60">{{ session('error') }}</div>
   @endif
 
+  <!-- Statistics Section -->
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <!-- Upcoming Schedules -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Jadwal Mendatang</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $upcomingSchedules }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500">
+          @include('layouts.partials.icon', ['name' => 'calendar', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-slate-500">
+          <span class="ml-1">{{ $upcomingTrend }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Completed Schedules -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Jadwal Selesai</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $completedSchedules }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 text-emerald-500">
+          @include('layouts.partials.icon', ['name' => 'check-circle', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-emerald-500">
+          @include('layouts.partials.icon', ['name' => 'trending-up', 'classes' => 'h-4 w-4'])
+          <span class="ml-1">{{ $completedTrend }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Pending Schedules -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Jadwal Tertunda</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $pendingSchedules }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-500">
+          @include('layouts.partials.icon', ['name' => 'clock', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-amber-500">
+          @include('layouts.partials.icon', ['name' => 'alert-circle', 'classes' => 'h-4 w-4'])
+          <span class="ml-1">{{ $pendingTrend }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Teachers Supervised -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Guru yang Diawasi</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $teachersSupervised }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-500">
+          @include('layouts.partials.icon', ['name' => 'graduation-cap', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-emerald-500">
+          @include('layouts.partials.icon', ['name' => 'trending-up', 'classes' => 'h-4 w-4'])
+          <span class="ml-1">{{ $teachersTrend }}</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
   <div class="grid gap-6 lg:grid-cols-2">
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
       <div class="flex items-start justify-between gap-4">
@@ -53,11 +131,23 @@
     </div>
 
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
-      <h2 class="text-base font-semibold text-slate-900">Panduan Singkat</h2>
-      <p class="mt-2 text-sm text-slate-500">Gunakan menu untuk mengelola jadwal, guru, dan undangan sekolah.</p>
-      <div class="mt-6 space-y-3 text-sm text-slate-600">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Selaraskan jadwal supervisi dan lakukan evaluasi tepat waktu agar kualitas pengajaran terjaga.</div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Manfaatkan undangan digital untuk melibatkan guru baru dan pantau status penerimaan secara berkala.</div>
+      <h2 class="text-base font-semibold text-slate-900">Jadwal Supervisi Terbaru</h2>
+      <p class="mt-2 text-sm text-slate-500">Daftar jadwal supervisi terkini.</p>
+      <div class="mt-6 space-y-4">
+        @foreach($recentSchedules as $schedule)
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <p class="font-medium text-slate-900">{{ $schedule['title'] }}</p>
+              <p class="text-sm text-slate-500">{{ $schedule['teacher'] }}</p>
+              <div class="mt-2 flex items-center gap-2 text-xs">
+                <span class="rounded-full bg-indigo-100 px-2 py-1 text-indigo-800">{{ $schedule['date'] }}</span>
+              </div>
+            </div>
+            <span class="rounded-full px-2 py-1 text-xs font-medium {{ $schedule['status_class'] }}">{{ $schedule['status'] }}</span>
+          </div>
+        </div>
+        @endforeach
       </div>
     </div>
   </div>

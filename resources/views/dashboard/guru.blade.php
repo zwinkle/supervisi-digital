@@ -19,6 +19,83 @@
     <div class="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-600 shadow-sm shadow-rose-100/60">{{ session('error') }}</div>
   @endif
 
+  <!-- Statistics Section -->
+  <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <!-- Pending Schedules -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Jadwal Belum Dikerjakan</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $pendingSchedules }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 text-amber-500">
+          @include('layouts.partials.icon', ['name' => 'clock', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-slate-500">
+          <span class="ml-1">{{ $pendingTrend }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- In Progress Schedules -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Jadwal Dalam Proses</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $inProgressSchedules }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 text-blue-500">
+          @include('layouts.partials.icon', ['name' => 'loader', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-blue-500">
+          @include('layouts.partials.icon', ['name' => 'trending-up', 'classes' => 'h-4 w-4'])
+          <span class="ml-1">{{ $inProgressTrend }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Completed Schedules -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Jadwal Selesai</p>
+          <p class="mt-2 text-3xl font-semibold text-slate-900">{{ $completedSchedules }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-emerald-100 text-emerald-500">
+          @include('layouts.partials.icon', ['name' => 'check-circle', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-emerald-500">
+          @include('layouts.partials.icon', ['name' => 'trending-up', 'classes' => 'h-4 w-4'])
+          <span class="ml-1">{{ $completedTrend }}</span>
+        </span>
+      </div>
+    </div>
+
+    <!-- Last Supervision -->
+    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
+      <div class="flex items-center justify-between">
+        <div>
+          <p class="text-sm font-medium text-slate-500">Supervisi Terakhir</p>
+          <p class="mt-2 text-lg font-semibold text-slate-900">{{ $lastSupervisionTitle }}</p>
+        </div>
+        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-indigo-100 text-indigo-500">
+          @include('layouts.partials.icon', ['name' => 'calendar', 'classes' => 'h-6 w-6'])
+        </div>
+      </div>
+      <div class="mt-4 flex items-center text-sm">
+        <span class="flex items-center text-slate-500">
+          <span class="ml-1">{{ $lastSupervisionDate }}</span>
+        </span>
+      </div>
+    </div>
+  </div>
+
   <div class="grid gap-6 lg:grid-cols-2">
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
       <h2 class="text-base font-semibold text-slate-900">Langkah Utama</h2>
@@ -48,10 +125,37 @@
     </div>
 
     <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 transition-all duration-300 ease-in-out hover:-translate-y-1 hover:shadow-lg">
-      <h2 class="text-base font-semibold text-slate-900">Tips Sukses Supervisi</h2>
-      <div class="mt-4 space-y-3 text-sm text-slate-600">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Catat refleksi pembelajaran setelah setiap sesi untuk meningkatkan kualitas pertemuan berikutnya.</div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">Pantau status unggahan dokumen secara berkala agar seluruh kebutuhan evaluasi terpenuhi.</div>
+      <h2 class="text-base font-semibold text-slate-900">Detail Supervisi Terakhir</h2>
+      <p class="mt-2 text-sm text-slate-500">Hasil evaluasi supervisi terbaru.</p>
+      <div class="mt-6 space-y-4">
+        @foreach($recentSupervisions as $supervision)
+        <div class="rounded-xl border border-slate-200 bg-slate-50 p-4">
+          <div class="flex items-start justify-between">
+            <div class="flex-1">
+              <p class="font-medium text-slate-900">{{ $supervision['title'] }}</p>
+              <p class="text-sm text-slate-500">Pengawas: {{ $supervision['supervisor'] }}</p>
+              <div class="mt-3 grid grid-cols-3 gap-2">
+                <div class="rounded-lg bg-white p-2 text-center">
+                  <p class="text-xs text-slate-500">RPP</p>
+                  <p class="font-semibold text-slate-900">{{ $supervision['rpp_score'] }}</p>
+                </div>
+                <div class="rounded-lg bg-white p-2 text-center">
+                  <p class="text-xs text-slate-500">Pembelajaran</p>
+                  <p class="font-semibold text-slate-900">{{ $supervision['pembelajaran_score'] }}</p>
+                </div>
+                <div class="rounded-lg bg-white p-2 text-center">
+                  <p class="text-xs text-slate-500">Asesmen</p>
+                  <p class="font-semibold text-slate-900">{{ $supervision['asesmen_score'] }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="mt-3 flex items-center justify-between">
+            <span class="text-xs text-slate-500">{{ $supervision['date'] }}</span>
+            <span class="rounded-full px-2 py-1 text-xs font-medium {{ $supervision['status_class'] }}">{{ $supervision['status'] }}</span>
+          </div>
+        </div>
+        @endforeach
       </div>
     </div>
   </div>
