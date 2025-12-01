@@ -48,7 +48,10 @@ class GoogleController extends Controller
                 $current->avatar = $googleUser->getAvatar() ?: $current->avatar;
                 $current->google_id = $googleUser->getId();
                 $current->google_access_token = $googleUser->token;
-                $current->google_refresh_token = $googleUser->refreshToken ?? $current->google_refresh_token;
+                // Always update refresh token if provided (Google only provides it on first consent)
+                if ($googleUser->refreshToken) {
+                    $current->google_refresh_token = $googleUser->refreshToken;
+                }
                 $current->google_token_expires_at = $expiresAt;
                 $current->google_email = $googleUser->getEmail() ?: $current->google_email;
                 $current->save();
@@ -71,7 +74,10 @@ class GoogleController extends Controller
             $user->avatar = $googleUser->getAvatar() ?: $user->avatar;
             $user->google_id = $googleUser->getId();
             $user->google_access_token = $googleUser->token;
-            $user->google_refresh_token = $googleUser->refreshToken ?? $user->google_refresh_token;
+            // Always update refresh token if provided (Google only provides it on first consent)
+            if ($googleUser->refreshToken) {
+                $user->google_refresh_token = $googleUser->refreshToken;
+            }
             $user->google_token_expires_at = $expiresAt;
             $user->google_email = $googleUser->getEmail() ?: $user->google_email;
             if (empty($user->password)) {

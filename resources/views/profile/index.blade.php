@@ -27,6 +27,25 @@
         </div>
     </div>
 
+    @if (session('error'))
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 shadow-sm shadow-rose-100/60">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    @include('layouts.partials.icon', ['name' => 'exclamation-triangle', 'classes' => 'h-5 w-5 text-rose-400'])
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-rose-800">Terjadi Kesalahan</h3>
+                    <div class="mt-2 text-sm text-rose-700">
+                        <p>{{ session('error') }}</p>
+                        @if(str_contains(session('error'), 'expired') || str_contains(session('error'), 'token'))
+                            <p class="mt-2">Solusi: Gunakan tombol "Perbarui Izin" di bawah untuk memperbarui token Google Anda.</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     @if (session('success'))
         <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">{{ session('success') }}</div>
     @endif
@@ -123,16 +142,28 @@
         </div>
 
         @if ($user->google_access_token)
+            @php
+                $isTokenExpired = $user->google_token_expires_at ? $user->google_token_expires_at->isPast() : true;
+                $tokenExpiryWarning = $user->google_token_expires_at ? $user->google_token_expires_at->diffInDays(now()) <= 7 : true;
+            @endphp
             <div class="mt-6 grid gap-4 md:grid-cols-2">
-                <div class="rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 text-sm text-emerald-600">
-                    <span class="font-semibold">Status: </span>Tertaut
+                <div class="rounded-xl @if($isTokenExpired) border-rose-200 bg-rose-50/70 @else border-emerald-200 bg-emerald-50/70 @endif px-4 py-3 text-sm @if($isTokenExpired) text-rose-600 @else text-emerald-600 @endif">
+                    <span class="font-semibold">Status: </span>@if($isTokenExpired) Token Expired @else Tertaut @endif
                 </div>
                 <div class="rounded-xl border border-slate-200 bg-[#F9FAFB] px-4 py-3 text-sm text-slate-600">
                     <span class="font-semibold">Email Google: </span>{{ $user->google_email ?? '-' }}
                 </div>
-                <div class="rounded-xl border border-slate-200 bg-[#F9FAFB] px-4 py-3 text-sm text-slate-600">
+                <div class="rounded-xl @if($tokenExpiryWarning) border-amber-200 bg-amber-50/70 @else border-slate-200 bg-[#F9FAFB] @endif px-4 py-3 text-sm @if($tokenExpiryWarning) text-amber-600 @else text-slate-600 @endif">
                     <span class="font-semibold">Kedaluwarsa Token: </span>{{ optional($user->google_token_expires_at)->format('d-m-Y H:i') ?? '-' }}
+                    @if($tokenExpiryWarning && !$isTokenExpired)
+                        <span class="block mt-1 text-xs">⚠️ Token akan kadaluarsa dalam {{ $user->google_token_expires_at->diffInDays(now()) }} hari</span>
+                    @endif
                 </div>
+                @if($isTokenExpired)
+                <div class="rounded-xl border-rose-200 bg-rose-50/70 px-4 py-3 text-sm text-rose-600 md:col-span-2">
+                    <span class="font-semibold">⚠️ Perhatian: </span>Token Google Anda telah expired. Anda tidak dapat mengupload file sampai token diperbarui. Gunakan tombol "Perbarui Izin" di bawah.
+                </div>
+                @endif
             </div>
             <div class="mt-6 flex flex-wrap gap-3">
                 <form action="{{ route('profile.google.disconnect') }}" method="post">

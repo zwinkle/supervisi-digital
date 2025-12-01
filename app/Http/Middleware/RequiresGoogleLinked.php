@@ -12,10 +12,18 @@ class RequiresGoogleLinked
     {
         $user = $request->user();
         if (!$user) abort(401);
+        
         if (empty($user->google_access_token)) {
             return redirect('/profile')
                 ->with('error', 'Menu ini memerlukan akses Google Drive. Silakan tautkan akun Google Anda di halaman Profil, lalu coba lagi.');
         }
+        
+        // Check if token is expired
+        if ($user->google_token_expires_at && $user->google_token_expires_at->isPast()) {
+            return redirect('/profile')
+                ->with('error', 'Token Google Anda telah expired. Silakan klik "Perbarui Izin" untuk memperbarui token Anda.');
+        }
+        
         return $next($request);
     }
 }

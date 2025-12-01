@@ -29,14 +29,21 @@ class GoogleDriveService
             $token['refresh_token'] = $refreshToken;
             $this->applyAccessToken($token);
         }
-        // Refresh token if expired and refresh token is available
-        if ($refreshToken && $this->client->isAccessTokenExpired()) {
-            $newToken = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
-            // Ensure refresh_token persists on some Google libs responses
-            if (!isset($newToken['refresh_token'])) {
-                $newToken['refresh_token'] = $refreshToken;
+        // Always try to refresh token if refresh token is available
+        if ($refreshToken) {
+            try {
+                if ($this->client->isAccessTokenExpired()) {
+                    $newToken = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
+                    // Ensure refresh_token persists on some Google libs responses
+                    if (!isset($newToken['refresh_token'])) {
+                        $newToken['refresh_token'] = $refreshToken;
+                    }
+                    $this->applyAccessToken($newToken);
+                }
+            } catch (\Exception $e) {
+                // If refresh fails, log the error but continue with current token
+                \Log::warning('Google token refresh failed: ' . $e->getMessage());
             }
-            $this->applyAccessToken($newToken);
         }
         $this->drive = new GoogleDrive($this->client);
     }
@@ -114,6 +121,42 @@ class GoogleDriveService
     public function getClient(): GoogleClient
     {
         return $this->client;
+    }
+
+    /**
+     * Check if current token is valid (not expired)
+     */
+    public function isTokenValid(): bool
+    {
+        return !$this->client->isAccessTokenExpired();
+    }
+
+    /**
+     * Get refreshed access token if available, returns null if refresh fails
+     */
+    public function getRefreshedToken(): ?array
+    {
+        $currentToken = $this->client->getAccessToken();
+        $refreshToken = $currentToken['refresh_token'] ?? null;
+        
+        if (!$refreshToken) {
+            return null;
+        }
+
+        try {
+            if ($this->client->isAccessTokenExpired()) {
+                $newToken = $this->client->fetchAccessTokenWithRefreshToken($refreshToken);
+                if (!isset($newToken['refresh_token'])) {
+                    $newToken['refresh_token'] = $refreshToken;
+                }
+                $this->applyAccessToken($newToken);
+                return $newToken;
+            }
+            return $currentToken;
+        } catch (\Exception $e) {
+            \Log::error('Failed to refresh Google token: ' . $e->getMessage());
+            return null;
+        }
     }
 
     public function ensureRootFolder(): string

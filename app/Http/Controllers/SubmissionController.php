@@ -68,16 +68,42 @@ class SubmissionController extends Controller
 
                         if ($file->google_file_id && (empty($file->web_view_link) || empty($file->extra['size']))) {
                             if ($user->google_access_token) {
-                                $drive = $drive ?? new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
-                                $remote = $drive->getFile($file->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size');
-                                $file->web_view_link = $remote->webViewLink ?? $file->web_view_link;
-                                $file->web_content_link = $remote->webContentLink ?? $file->web_content_link;
-                                $extra = $file->extra ?? [];
-                                if (isset($remote->size)) {
-                                    $extra['size'] = (int) $remote->size;
+                                try {
+                                    $drive = $drive ?? new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
+                                    
+                                    // Check if token is valid and refresh if needed
+                                    if (!$drive->isTokenValid()) {
+                                        $newToken = $drive->getRefreshedToken();
+                                        if ($newToken) {
+                                            // Token refreshed successfully, update in database
+                                            $user->google_access_token = $newToken['access_token'];
+                                            if (!empty($newToken['expires_in'])) {
+                                                $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                                            }
+                                            if (!empty($newToken['refresh_token'])) {
+                                                $user->google_refresh_token = $newToken['refresh_token'];
+                                            }
+                                            $user->save();
+                                        } else {
+                                            // Token refresh failed, skip fetching file info
+                                            Log::warning('Failed to refresh token for file info, skipping file', ['file_id' => $file->google_file_id]);
+                                            return null; // Skip this file by returning null
+                                        }
+                                    }
+                                    
+                                    $remote = $drive->getFile($file->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size');
+                                    $file->web_view_link = $remote->webViewLink ?? $file->web_view_link;
+                                    $file->web_content_link = $remote->webContentLink ?? $file->web_content_link;
+                                    $extra = $file->extra ?? [];
+                                    if (isset($remote->size)) {
+                                        $extra['size'] = (int) $remote->size;
+                                    }
+                                    $file->extra = $extra;
+                                    $file->save();
+                                } catch (\Throwable $e) {
+                                    Log::warning('Failed to fetch file info from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
+                                    // Continue processing other files
                                 }
-                                $file->extra = $extra;
-                                $file->save();
                             }
                         }
 
@@ -95,15 +121,52 @@ class SubmissionController extends Controller
                     $vid = $submission->videoFile;
                     if (empty($vid->extra['is_external_link']) && (empty($vid->extra['videoMediaMetadata']) || empty($vid->web_view_link) || empty($vid->extra['size']))) {
                         if ($user->google_access_token) {
-                            $drive = $drive ?? new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
-                            $g = $drive->getFile($vid->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size, videoMediaMetadata');
-                            $vid->web_view_link = $g->webViewLink ?? $vid->web_view_link;
-                            $vid->web_content_link = $g->webContentLink ?? $vid->web_content_link;
-                            $extra = $vid->extra ?? [];
-                            if (isset($g->size)) { $extra['size'] = (int)$g->size; }
-                            if (isset($g->videoMediaMetadata)) { $extra['videoMediaMetadata'] = $g->videoMediaMetadata; }
-                            $vid->extra = $extra;
-                            $vid->save();
+                            try {
+                                $drive = $drive ?? new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
+                                
+                                // Check if token is valid and refresh if needed
+                                if (!$drive->isTokenValid()) {
+                                    $newToken = $drive->getRefreshedToken();
+                                    if ($newToken) {
+                                        // Token refreshed successfully, update in database
+                                        $user->google_access_token = $newToken['access_token'];
+                                        if (!empty($newToken['expires_in'])) {
+                                            $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                                        }
+                                        if (!empty($newToken['refresh_token'])) {
+                                            $user->google_refresh_token = $newToken['refresh_token'];
+                                        }
+                                        $user->save();
+                                        
+                                        // Continue with video processing after token refresh
+                                        $g = $drive->getFile($vid->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size, videoMediaMetadata');
+                                        $vid->web_view_link = $g->webViewLink ?? $vid->web_view_link;
+                                        $vid->web_content_link = $g->webContentLink ?? $vid->web_content_link;
+                                        $extra = $vid->extra ?? [];
+                                        if (isset($g->size)) { $extra['size'] = (int)$g->size; }
+                                        if (isset($g->videoMediaMetadata)) { $extra['videoMediaMetadata'] = $g->videoMediaMetadata; }
+                                        $vid->extra = $extra;
+                                        $vid->save();
+                                    } else {
+                                        // Token refresh failed, skip fetching file info
+                                        Log::warning('Failed to refresh token for video info, skipping', ['file_id' => $vid->google_file_id]);
+                                        // Continue without updating video metadata
+                                    }
+                                } else {
+                                    // Token is valid, continue with video processing
+                                    $g = $drive->getFile($vid->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size, videoMediaMetadata');
+                                    $vid->web_view_link = $g->webViewLink ?? $vid->web_view_link;
+                                    $vid->web_content_link = $g->webContentLink ?? $vid->web_content_link;
+                                    $extra = $vid->extra ?? [];
+                                    if (isset($g->size)) { $extra['size'] = (int)$g->size; }
+                                    if (isset($g->videoMediaMetadata)) { $extra['videoMediaMetadata'] = $g->videoMediaMetadata; }
+                                    $vid->extra = $extra;
+                                    $vid->save();
+                                }
+                            } catch (\Throwable $e) {
+                                Log::warning('Failed to fetch video info from Drive', ['error' => $e->getMessage(), 'file_id' => $vid->google_file_id]);
+                                // Continue processing
+                            }
                         }
                     }
                     $durationMs = $vid->extra['videoMediaMetadata']['durationMillis'] ?? null;
@@ -251,10 +314,32 @@ class SubmissionController extends Controller
         try {
             $drive = null;
             $dateFolderId = null;
+            $tokenRefreshed = false;
 
             if ($needsDrive) {
                 try {
                     $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
+                    
+                    // Check if token is valid, if not try to refresh
+                    if (!$drive->isTokenValid()) {
+                        $newToken = $drive->getRefreshedToken();
+                        if ($newToken) {
+                            // Token refreshed successfully, update in database
+                            $user->google_access_token = $newToken['access_token'];
+                            if (!empty($newToken['expires_in'])) {
+                                $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                            }
+                            if (!empty($newToken['refresh_token'])) {
+                                $user->google_refresh_token = $newToken['refresh_token'];
+                            }
+                            $user->save();
+                            $tokenRefreshed = true;
+                        } else {
+                            // Token refresh failed, user needs to re-authenticate
+                            return back()->withErrors(['google' => 'Token Google telah expired dan tidak dapat diperbarui. Silakan logout dari Google di halaman profil dan login kembali.'])->withInput();
+                        }
+                    }
+                    
                     $rootId = $drive->ensureRootFolder();
                     $dateStr = $schedule->date->format('d-m-Y');
                     $rawTitle = $schedule->title ?: 'Sesi Supervisi';
@@ -264,7 +349,7 @@ class SubmissionController extends Controller
                     $dateFolderId = $drive->ensureChildFolder($rootId, $folderName);
                 } catch (\Throwable $e) {
                     Log::error('Failed to initialize Drive service', ['error' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
-                    return back()->withErrors(['upload' => 'Gagal menghubungkan ke Google Drive. Token mungkin sudah expired. Silakan logout dan login kembali.'])->withInput();
+                    return back()->withErrors(['upload' => 'Gagal menghubungkan ke Google Drive. Token mungkin sudah expired. Silakan logout dari Google di halaman profil dan login kembali.'])->withInput();
                 }
             }
 
@@ -416,13 +501,16 @@ class SubmissionController extends Controller
             }
 
             if ($drive) {
-                $newToken = $drive->getClient()->getAccessToken();
-                if (!empty($newToken['access_token'])) {
-                    $user->google_access_token = $newToken['access_token'];
-                    if (!empty($newToken['expires_in'])) {
-                        $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                // Only update token if we haven't already refreshed it
+                if (!$tokenRefreshed) {
+                    $newToken = $drive->getClient()->getAccessToken();
+                    if (!empty($newToken['access_token'])) {
+                        $user->google_access_token = $newToken['access_token'];
+                        if (!empty($newToken['expires_in'])) {
+                            $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                        }
+                        $user->save();
                     }
-                    $user->save();
                 }
             }
 
@@ -461,15 +549,36 @@ class SubmissionController extends Controller
         if ($file->google_file_id && empty($file->extra['is_external_link']) && $user->google_access_token) {
             try {
                 $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
+                
+                // Check if token is valid and refresh if needed
+                if (!$drive->isTokenValid()) {
+                    $newToken = $drive->getRefreshedToken();
+                    if ($newToken) {
+                        // Token refreshed successfully, update in database
+                        $user->google_access_token = $newToken['access_token'];
+                        if (!empty($newToken['expires_in'])) {
+                            $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                        }
+                        if (!empty($newToken['refresh_token'])) {
+                            $user->google_refresh_token = $newToken['refresh_token'];
+                        }
+                        $user->save();
+                    } else {
+                        // Token refresh failed, skip file deletion from Drive
+                        Log::warning('Failed to refresh token for video deletion, file will remain in Drive', ['file_id' => $file->google_file_id]);
+                        $drive = null;
+                    }
+                }
+                
+                if ($drive) {
+                    try {
+                        $drive->deleteFile($file->google_file_id);
+                    } catch (\Throwable $e) {
+                        Log::warning('Failed to delete Video from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
+                    }
+                }
             } catch (\Throwable $e) {
                 Log::error('Failed to initialize Drive service for video delete', ['error' => $e->getMessage()]);
-            }
-            if ($drive) {
-                try {
-                    $drive->deleteFile($file->google_file_id);
-                } catch (\Throwable $e) {
-                    Log::warning('Failed to delete Video from Drive', ['error' => $e->getMessage()]);
-                }
             }
         }
 
@@ -502,16 +611,37 @@ class SubmissionController extends Controller
         if ($file && $file->google_file_id && $user->google_access_token) {
             try {
                 $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
+                
+                // Check if token is valid and refresh if needed
+                if (!$drive->isTokenValid()) {
+                    $newToken = $drive->getRefreshedToken();
+                    if ($newToken) {
+                        // Token refreshed successfully, update in database
+                        $user->google_access_token = $newToken['access_token'];
+                        if (!empty($newToken['expires_in'])) {
+                            $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
+                        }
+                        if (!empty($newToken['refresh_token'])) {
+                            $user->google_refresh_token = $newToken['refresh_token'];
+                        }
+                        $user->save();
+                    } else {
+                        // Token refresh failed, skip file deletion from Drive
+                        Log::warning('Failed to refresh token for document deletion, file will remain in Drive', ['file_id' => $file->google_file_id]);
+                        $drive = null;
+                    }
+                }
+                
+                if ($drive) {
+                    try {
+                        $drive->deleteFile($file->google_file_id);
+                    } catch (\Throwable $e) {
+                        Log::warning('Failed to delete document from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
+                    }
+                }
             } catch (\Throwable $e) {
                 Log::error('Failed to initialize Drive service for document delete', ['error' => $e->getMessage()]);
                 $drive = null;
-            }
-            if ($drive) {
-                try {
-                    $drive->deleteFile($file->google_file_id);
-                } catch (\Throwable $e) {
-                    Log::warning('Failed to delete document from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
-                }
             }
         }
 

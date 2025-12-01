@@ -45,6 +45,25 @@
         <x-back-button :href="$canEdit ? route('guru.schedules') : route('supervisor.schedules')" />
     </div>
 
+    @if(session('error'))
+        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 shadow-sm shadow-rose-100/60">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    @include('layouts.partials.icon', ['name' => 'exclamation-triangle', 'classes' => 'h-5 w-5 text-rose-400'])
+                </div>
+                <div class="ml-3">
+                    <h3 class="text-sm font-medium text-rose-800">Terjadi Kesalahan</h3>
+                    <div class="mt-2 text-sm text-rose-700">
+                        <p>{{ session('error') }}</p>
+                        @if(str_contains(session('error'), 'expired') || str_contains(session('error'), 'token'))
+                            <p class="mt-2">Solusi: Kunjungi <a href="{{ route('profile.index') }}" class="font-medium underline">halaman profil</a> dan klik "Perbarui Izin" untuk memperbarui token Google Anda.</p>
+                        @endif
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
+
     <section class="space-y-6 rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-md shadow-slate-200/40">
         <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
