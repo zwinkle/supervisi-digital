@@ -34,8 +34,8 @@
       ];
   }))
 
-  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40" id="supervisor-invitations-container">
-    <form id="supervisor-invitations-search" class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+  <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40" id="supervisor-invitations-container">
+    <form id="supervisor-invitations-search" class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div class="flex w-full flex-col gap-2 md:flex-row md:gap-3">
         <div class="relative w-full md:max-w-sm">
           <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
@@ -44,17 +44,17 @@
           <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari email undangan" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
         </div>
         <select name="status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:w-48">
-          <option value="all" @selected(request('status', 'all') === 'all')>Semua Status</option>
-          <option value="active" @selected(request('status') === 'active')>Aktif</option>
-          <option value="used" @selected(request('status') === 'used')>Digunakan</option>
-          <option value="expired" @selected(request('status') === 'expired')>Kedaluwarsa</option>
+          <option value="all" @selected(request('status', 'all') === 'all')">Semua Status</option>
+          <option value="active" @selected(request('status') === 'active')">Aktif</option>
+          <option value="used" @selected(request('status') === 'used')">Digunakan</option>
+          <option value="expired" @selected(request('status') === 'expired')">Kedaluwarsa</option>
         </select>
       </div>
       <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
     </form>
 
-    <div id="supervisor-invitations-results">
-    <div class="space-y-4 px-5 py-6 md:hidden">
+    <div id="supervisor-invitations-results" class="mt-6">
+    <div class="space-y-4 md:hidden">
       @forelse ($invitationEntries as $entry)
         @php($invitation = $entry['model'])
         @php($schools = $entry['schools'])
@@ -146,7 +146,7 @@
       @endforelse
     </div>
 
-    <div class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block">
+    <div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block">
       <table class="min-w-full text-sm">
         <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
           <tr>
@@ -213,7 +213,7 @@
                 @endif
               </td>
               <td class="px-5 py-4 align-top">
-                <div class="flex items-center justify-end gap-2">
+                <div class="flex items-center justify-end gap-2 pr-1">
                   @if (!$invitation->used_at)
                     <form action="{{ route('supervisor.invitations.resend', $invitation) }}" method="post" class="inline js-confirm" data-message="Perbarui kedaluwarsa undangan untuk {{ $invitation->email }}?" data-variant="success">
                       @csrf

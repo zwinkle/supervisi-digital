@@ -1,4 +1,4 @@
-<div class="space-y-4 px-5 py-6 md:hidden" id="schools-mobile-list">
+<div class="space-y-4 md:hidden" id="schools-mobile-list">
   @forelse ($schools as $school)
     <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
       <div class="space-y-1">
@@ -29,7 +29,7 @@
   @endforelse
 </div>
 
-<div class="hidden overflow-x-auto md:block" id="schools-table">
+<div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="schools-table">
   <table class="min-w-full text-sm">
     <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
       <tr>
@@ -51,7 +51,7 @@
             <p class="text-sm text-slate-500">{{ $school->address ?? 'Alamat belum diisi' }}</p>
           </td>
           <td class="px-5 py-4 align-top">
-            <div class="flex items-center justify-end gap-2">
+            <div class="flex items-center justify-end gap-2 pr-1">
               <a href="{{ route('admin.schools.edit', $school) }}" class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
                 @include('layouts.partials.icon', ['name' => 'pencil', 'classes' => 'h-3.5 w-3.5'])
                 Edit

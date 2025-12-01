@@ -120,6 +120,11 @@
         body.sidebar-collapsed [data-sidebar-collapse] .icon-collapsed {
             display: inline-flex;
         }
+
+        /* Hide sidebar collapse handle when viewer modal is open */
+        #sidebar-collapse-handle.viewer-modal-open {
+            display: none !important;
+        }
     </style>
 </head>
 @php
@@ -276,7 +281,7 @@
                                     </a>
                                     <form action="{{ route('logout') }}" method="post" class="mt-2">
                                         @csrf
-                                        <button type="submit" class="flex w-full items-center justify-between rounded-lg bg-rose-500 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-rose-200/70 transition-all duration-300 ease-in-out hover:bg-rose-600">
+                                        <button type="submit" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-all duration-300 ease-in-out hover:bg-rose-50 hover:text-rose-700">
                                             <span>Keluar</span>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
                                                 <path d="M15.5 6V4.5A1.5 1.5 0 0 0 14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h7.5a1.5 1.5 0 0 0 1.5-1.5V18" />
@@ -341,7 +346,7 @@
         </div>
     </div>
 
-    <div id="viewer-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-all duration-300 ease-in-out">
+    <div id="viewer-modal" class="fixed inset-0 z-50 hidden bg-slate-900/40 backdrop-blur-sm transition-all duration-300 ease-in-out flex items-center justify-center">
         <div class="w-full max-w-xl scale-95 transform rounded-xl border border-slate-200 bg-white p-6 shadow-2xl shadow-slate-200/60 transition-all duration-300 ease-in-out">
             <div class="flex items-start justify-between">
                 <div>
@@ -550,11 +555,23 @@
             const openViewer = (link) => {
                 viewerInput.value = link || '';
                 viewerModal.classList.remove('hidden');
+                viewerModal.classList.add('flex');
+                // Hide sidebar collapse handle when modal is open
+                const collapseHandle = document.getElementById('sidebar-collapse-handle');
+                if (collapseHandle) {
+                    collapseHandle.classList.add('viewer-modal-open');
+                }
             };
 
             const closeViewer = () => {
                 viewerModal.classList.add('hidden');
+                viewerModal.classList.remove('flex');
                 viewerInput.value = '';
+                // Show sidebar collapse handle when modal is closed
+                const collapseHandle = document.getElementById('sidebar-collapse-handle');
+                if (collapseHandle) {
+                    collapseHandle.classList.remove('viewer-modal-open');
+                }
             };
 
             viewerClose?.addEventListener('click', closeViewer);

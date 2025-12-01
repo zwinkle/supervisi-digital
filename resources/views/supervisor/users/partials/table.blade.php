@@ -7,7 +7,7 @@
     ];
 }))
 
-<div class="space-y-4 px-5 py-6 md:hidden" id="supervisor-users-mobile">
+<div class="space-y-4 md:hidden" id="supervisor-users-mobile">
   @forelse ($teacherItems as $item)
     @php($teacher = $item['teacher'])
     @php($teacherSchools = $item['schools'])
@@ -51,7 +51,7 @@
   @endforelse
 </div>
 
-<div class="hidden overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="supervisor-users-table">
+<div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="supervisor-users-table">
   <table class="min-w-full text-sm">
     <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
       <tr>

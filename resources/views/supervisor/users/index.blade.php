@@ -28,8 +28,8 @@
     @endif
   @endforeach
 
-  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40" id="supervisor-users-container">
-    <form id="supervisor-users-search" class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+  <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40" id="supervisor-users-container">
+    <form id="supervisor-users-search" class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div class="flex w-full flex-col gap-2 md:flex-row md:gap-3">
         <div class="relative w-full md:max-w-sm">
           <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
@@ -46,7 +46,7 @@
       <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
     </form>
 
-    <div id="supervisor-users-results">
+    <div id="supervisor-users-results" class="mt-6">
       @include('supervisor.users.partials.table', ['teachers' => $teachers])
     </div>
   </div>

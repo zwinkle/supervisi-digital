@@ -1,4 +1,4 @@
-<div class="mt-6 space-y-4 md:hidden" id="users-mobile-list">
+<div class="space-y-4 md:hidden" id="users-mobile-list">
   @forelse ($users as $u)
     @php
       $roles = [];
@@ -92,7 +92,7 @@
   @endforelse
 </div>
 
-<div class="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="users-table">
+<div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="users-table">
   <table class="min-w-full text-sm">
     <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
       <tr>

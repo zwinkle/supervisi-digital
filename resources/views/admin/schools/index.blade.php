@@ -16,8 +16,8 @@
     </a>
   </div>
 
-  <div class="rounded-xl border border-slate-200 bg-white shadow-md shadow-slate-200/40" id="schools-container">
-    <form id="schools-search-form" class="flex flex-col gap-3 border-b border-slate-100 px-5 py-4 md:flex-row md:items-center md:justify-between">
+  <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40" id="schools-container">
+    <form id="schools-search-form" class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
       <div class="flex w-full flex-col gap-2 md:flex-row md:gap-3">
         <div class="relative w-full md:max-w-sm">
           <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
@@ -35,10 +35,10 @@
     </form>
 
     @if (session('success'))
-      <div class="border-b border-slate-100 px-5 py-3 text-sm text-emerald-600">{{ session('success') }}</div>
+      <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">{{ session('success') }}</div>
     @endif
 
-    <div id="schools-results">
+    <div id="schools-results" class="mt-6">
       @include('admin.schools.partials.results', ['schools' => $schools])
     </div>
   </div>
