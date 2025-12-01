@@ -92,7 +92,7 @@
   @endforelse
 </div>
 
-<div class="mt-6 hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="users-table">
+<div class="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="users-table">
   <table class="min-w-full text-sm">
     <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
       <tr>

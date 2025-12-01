@@ -53,3 +53,9 @@
 - [x] t25-rubric-docs: Dokumentasi rubrik (lihat `docs/rubrik.md`)
 - [x] t26-oauth-routes-stubs: Routes OAuth Google + stub controller & GoogleDriveService
 - [x] t28-seed-roles: Seed roles dasar (teacher, supervisor) dengan Spatie Permission
+- [x] t29-dual-evaluation: Fitur dual evaluation method untuk supervisor
+  - Opsi 1: Penilaian manual menggunakan form (radio, checkbox)
+  - Opsi 2: Upload file hasil supervisi (PDF, DOC, DOCX) yang mencakup seluruh penilaian
+  - Guru dapat melihat dan download hasil supervisi yang diupload supervisor
+  - File disimpan di storage/app/public/evaluation_files
+  - Kolom baru di tabel schedules: `uploaded_evaluation_file`, `evaluation_method`

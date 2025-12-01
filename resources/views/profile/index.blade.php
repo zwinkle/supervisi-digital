@@ -142,7 +142,7 @@
                         Putuskan Tautan
                     </button>
                 </form>
-                <a href="{{ route('google.redirect') }}" class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-600 shadow-sm shadow-slate-200/70 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+                <a href="{{ route('google.redirect') }}" class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-100/70 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-100">
                     @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-4 w-4 text-indigo-500'])
                     Perbarui Izin
                 </a>

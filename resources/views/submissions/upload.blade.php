@@ -431,7 +431,7 @@
           '<h3 class="text-lg font-semibold text-slate-900">Konfirmasi Hapus</h3>'+ 
           '<p id="delete-modal-text" class="mt-2 text-sm text-slate-500">Apakah Anda yakin ingin menghapus berkas ini?</p>'+ 
           '<div class="mt-5 flex justify-end gap-2">'+ 
-          '<button type="button" id="btn-cancel-del" class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">Batal</button>'+ 
+          '<button type="button" id="btn-cancel-del" class="rounded-xl border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-600 transition-all duration-300 ease-in-out hover:border-slate-300 hover:bg-slate-50">Batal</button>'+ 
           '<button type="button" id="btn-confirm-del" class="rounded-xl bg-rose-500 px-3 py-1.5 text-sm font-semibold text-white shadow-md shadow-rose-200/70 transition-all duration-300 ease-in-out hover:opacity-90">Hapus</button>'+ 
           '</div></div>';
         document.body.appendChild(modal);

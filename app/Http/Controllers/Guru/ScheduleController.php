@@ -66,4 +66,16 @@ class ScheduleController extends Controller
             return response('Gagal membuat PDF: '.$e->getMessage(), 500);
         }
     }
+
+    public function downloadEvaluation(Request $request, Schedule $schedule)
+    {
+        $user = $request->user();
+        if ($schedule->teacher_id !== $user->id) abort(403);
+
+        if (!$schedule->uploaded_evaluation_file || !\Storage::disk('public')->exists($schedule->uploaded_evaluation_file)) {
+            return redirect()->back()->withErrors(['file' => 'File hasil supervisi tidak tersedia']);
+        }
+
+        return \Storage::disk('public')->download($schedule->uploaded_evaluation_file);
+    }
 }

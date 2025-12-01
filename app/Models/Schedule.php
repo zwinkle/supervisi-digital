@@ -12,7 +12,7 @@ class Schedule extends Model
     use HasFactory;
 
     protected $fillable = [
-        'school_id', 'supervisor_id', 'teacher_id', 'date', 'title', 'description', 'class_name', 'remarks', 'evaluated_at'
+        'school_id', 'supervisor_id', 'teacher_id', 'date', 'title', 'description', 'class_name', 'remarks', 'evaluated_at', 'uploaded_evaluation_file', 'evaluation_method', 'manual_rpp_score', 'manual_pembelajaran_score', 'manual_asesmen_score'
     ];
 
     protected $casts = [

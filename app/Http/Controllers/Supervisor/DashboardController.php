@@ -52,11 +52,34 @@ class DashboardController extends Controller
                 ];
             });
         
-        // Calculate trend indicators (simplified for now)
-        $upcomingTrend = 'Minggu ini';
-        $completedTrend = '+5 bulan ini';
-        $pendingTrend = 'Perlu perhatian';
-        $teachersTrend = '2 guru baru';
+        // Calculate trend indicators based on actual data with timestamp
+        $upcomingThisWeek = Schedule::where('supervisor_id', $user->id)
+            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
+            ->whereNull('conducted_at')
+            ->count();
+            
+        $completedThisMonth = Schedule::where('supervisor_id', $user->id)
+            ->whereNotNull('conducted_at')
+            ->whereMonth('conducted_at', now()->month)
+            ->whereYear('conducted_at', now()->year)
+            ->count();
+            
+        $pendingOverdue = Schedule::where('supervisor_id', $user->id)
+            ->where('date', '<', now()->subDays(7))
+            ->whereNull('conducted_at')
+            ->count();
+            
+        $teachersThisMonth = User::whereHas('teachingSchedules', function ($query) use ($user) {
+            $query->where('supervisor_id', $user->id);
+        })
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->count();
+        
+        $upcomingTrend = $upcomingThisWeek . ' minggu ini';
+        $completedTrend = $completedThisMonth . ' bulan ini';
+        $pendingTrend = $pendingOverdue . ' terlambat';
+        $teachersTrend = $teachersThisMonth . ' baru bulan ini';
 
         return view('dashboard.supervisor', compact(
             'upcomingSchedules',

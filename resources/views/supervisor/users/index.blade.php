@@ -11,7 +11,7 @@
       </div>
     </div>
     <div class="flex flex-wrap gap-3">
-      <a href="{{ route('supervisor.invitations.index') }}" class="inline-flex h-11 items-center gap-2 rounded-xl border border-slate-200 bg-white px-5 py-2.5 text-sm font-semibold text-slate-600 shadow-md shadow-slate-200/60 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
+      <a href="{{ route('supervisor.invitations.index') }}" class="inline-flex h-11 items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-2.5 text-sm font-semibold text-indigo-700 shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-100">
         @include('layouts.partials.icon', ['name' => 'sparkles', 'classes' => 'h-4 w-4 text-indigo-500'])
         Kelola Undangan
       </a>

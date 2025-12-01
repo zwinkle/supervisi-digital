@@ -287,4 +287,66 @@ class ScheduleController extends Controller
             return response('Gagal membuat PDF: '.$e->getMessage(), 500);
         }
     }
+
+    public function uploadEvaluation(Request $request, Schedule $schedule)
+    {
+        $user = $request->user();
+        if ($schedule->supervisor_id !== $user->id) abort(403);
+
+        $request->validate([
+            'evaluation_file' => 'required|file|mimes:pdf,doc,docx|max:10240', // max 10MB
+            'scores.rpp' => 'required|numeric|min:0|max:100',
+            'scores.pembelajaran' => 'required|numeric|min:0|max:100',
+            'scores.asesmen' => 'required|numeric|min:0|max:100',
+        ]);
+
+        // Delete old file if exists
+        if ($schedule->uploaded_evaluation_file && \Storage::disk('public')->exists($schedule->uploaded_evaluation_file)) {
+            \Storage::disk('public')->delete($schedule->uploaded_evaluation_file);
+        }
+
+        // Store new file
+        $path = $request->file('evaluation_file')->store('evaluation_files', 'public');
+        
+        $schedule->uploaded_evaluation_file = $path;
+        $schedule->evaluation_method = 'upload';
+        $schedule->evaluated_at = now(); // Mark as evaluated
+        
+        // Save manual scores
+        $schedule->manual_rpp_score = $request->input('scores.rpp');
+        $schedule->manual_pembelajaran_score = $request->input('scores.pembelajaran');
+        $schedule->manual_asesmen_score = $request->input('scores.asesmen');
+        
+        $schedule->save();
+
+        return redirect()->route('supervisor.schedules.assessment', $schedule)
+            ->with('success', 'File hasil supervisi dan skor berhasil diupload');
+    }
+
+    public function downloadEvaluation(Request $request, Schedule $schedule)
+    {
+        $user = $request->user();
+        if ($schedule->supervisor_id !== $user->id) abort(403);
+
+        if (!$schedule->uploaded_evaluation_file || !\Storage::disk('public')->exists($schedule->uploaded_evaluation_file)) {
+            return redirect()->back()->withErrors(['file' => 'File tidak ditemukan']);
+        }
+
+        return \Storage::disk('public')->download($schedule->uploaded_evaluation_file);
+    }
+
+    public function updateMethod(Request $request, Schedule $schedule)
+    {
+        $user = $request->user();
+        if ($schedule->supervisor_id !== $user->id) abort(403);
+
+        $request->validate([
+            'evaluation_method' => 'required|in:manual,upload',
+        ]);
+
+        $schedule->evaluation_method = $request->evaluation_method;
+        $schedule->save();
+
+        return response()->json(['success' => true]);
+    }
 }

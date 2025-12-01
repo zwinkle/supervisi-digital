@@ -95,6 +95,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/dashboard', [\App\Http\Controllers\Guru\DashboardController::class, 'index'])->name('guru.dashboard');
         Route::get('/schedules', [\App\Http\Controllers\Guru\ScheduleController::class, 'index'])->name('guru.schedules');
         Route::get('/schedules/{schedule}/export', [\App\Http\Controllers\Guru\ScheduleController::class, 'export'])->name('guru.schedules.export');
+        Route::get('/schedules/{schedule}/download-evaluation', [\App\Http\Controllers\Guru\ScheduleController::class, 'downloadEvaluation'])->name('guru.schedules.download-evaluation');
         // Upload submission requires linked Google
         Route::get('/schedules/{schedule}/submit', [SubmissionController::class, 'showForm'])
             ->middleware('requires_google_linked')->name('guru.submissions.show');
@@ -118,6 +119,10 @@ Route::middleware('auth')->group(function () {
         Route::post('/schedules/{schedule}/conduct', [\App\Http\Controllers\Supervisor\ScheduleController::class, 'conduct'])->name('supervisor.schedules.conduct');
         // Assessment summary page
         Route::get('/schedules/{schedule}/assessment', [\App\Http\Controllers\Supervisor\ScheduleController::class, 'assessment'])->name('supervisor.schedules.assessment');
+        // Upload evaluation file
+        Route::post('/schedules/{schedule}/upload-evaluation', [\App\Http\Controllers\Supervisor\ScheduleController::class, 'uploadEvaluation'])->name('supervisor.schedules.upload-evaluation');
+        Route::get('/schedules/{schedule}/download-evaluation', [\App\Http\Controllers\Supervisor\ScheduleController::class, 'downloadEvaluation'])->name('supervisor.schedules.download-evaluation');
+        Route::post('/schedules/{schedule}/update-method', [\App\Http\Controllers\Supervisor\ScheduleController::class, 'updateMethod'])->name('supervisor.schedules.update-method');
         // Read-only submissions (uses SubmissionController view)
         Route::get('/schedules/{schedule}/files', [SubmissionController::class, 'showForm'])->name('supervisor.submissions.show');
         // Status polling for submissions (shared with teachers)

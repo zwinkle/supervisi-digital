@@ -62,10 +62,28 @@ class DashboardController extends Controller
                 ];
             });
         
-        // Calculate trend indicators (simplified for now)
-        $pendingTrend = 'Perlu segera dikerjakan';
-        $inProgressTrend = 'Dalam pengerjaan';
-        $completedTrend = '+2 bulan ini';
+        // Calculate trend indicators based on actual data with timestamp
+        $pendingThisWeek = Schedule::where('teacher_id', $user->id)
+            ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
+            ->whereDoesntHave('submission')
+            ->count();
+            
+        $inProgressThisMonth = Schedule::where('teacher_id', $user->id)
+            ->whereHas('submission')
+            ->whereNull('evaluated_at')
+            ->whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+            
+        $completedThisMonth = Schedule::where('teacher_id', $user->id)
+            ->whereNotNull('evaluated_at')
+            ->whereMonth('evaluated_at', now()->month)
+            ->whereYear('evaluated_at', now()->year)
+            ->count();
+        
+        $pendingTrend = $pendingThisWeek . ' minggu ini';
+        $inProgressTrend = $inProgressThisMonth . ' bulan ini';
+        $completedTrend = $completedThisMonth . ' bulan ini';
 
         return view('dashboard.guru', compact(
             'pendingSchedules',

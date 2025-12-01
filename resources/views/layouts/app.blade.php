@@ -276,7 +276,7 @@
                                     </a>
                                     <form action="{{ route('logout') }}" method="post" class="mt-2">
                                         @csrf
-                                        <button type="submit" class="flex w-full items-center justify-between rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700 transition-all duration-300 ease-in-out hover:bg-indigo-100 hover:text-indigo-600">
+                                        <button type="submit" class="flex w-full items-center justify-between rounded-lg bg-rose-500 px-3 py-2 text-sm font-semibold text-white shadow-md shadow-rose-200/70 transition-all duration-300 ease-in-out hover:bg-rose-600">
                                             <span>Keluar</span>
                                             <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="h-4 w-4">
                                                 <path d="M15.5 6V4.5A1.5 1.5 0 0 0 14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h7.5a1.5 1.5 0 0 0 1.5-1.5V18" />

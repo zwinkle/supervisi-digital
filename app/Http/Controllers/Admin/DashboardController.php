@@ -95,11 +95,30 @@ class DashboardController extends Controller
         // Take only the first 3 activities
         $recentActivities = array_slice($recentActivities, 0, 3);
         
-        // Calculate trend indicators based on actual data
-        $userTrend = '+0% bulan ini'; // Would need more complex logic to calculate actual trends
-        $schoolTrend = $totalSchools . ' sekolah aktif';
-        $teacherTrend = '+' . $activeTeachers . ' guru aktif';
-        $invitationTrend = $pendingInvitations . ' tertunda';
+        // Calculate trend indicators based on actual data with timestamp
+        $usersThisMonth = User::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        
+        $schoolsThisMonth = School::whereMonth('created_at', now()->month)
+            ->whereYear('created_at', now()->year)
+            ->count();
+        
+        $teachersThisMonth = User::whereHas('schools', function ($query) {
+            $query->where('school_user.role', 'teacher');
+        })
+        ->whereMonth('created_at', now()->month)
+        ->whereYear('created_at', now()->year)
+        ->count();
+        
+        $expiredInvitations = Invitation::whereNull('used_at')
+            ->where('expires_at', '<=', now())
+            ->count();
+        
+        $userTrend = $usersThisMonth . ' baru bulan ini';
+        $schoolTrend = $schoolsThisMonth . ' baru bulan ini';
+        $teacherTrend = $teachersThisMonth . ' baru bulan ini';
+        $invitationTrend = $expiredInvitations . ' kedaluwarsa';
 
         return view('dashboard.admin', compact(
             'totalUsers',
