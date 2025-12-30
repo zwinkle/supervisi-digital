@@ -16,6 +16,11 @@ Route::get('/', function () {
     return redirect()->route('login');
 });
 
+// Documentation
+Route::get('/docs', [\App\Http\Controllers\DocsController::class, 'index'])->name('docs.index');
+Route::get('/docs/privacy-policy', [\App\Http\Controllers\DocsController::class, 'privacy'])->name('docs.privacy');
+Route::get('/docs/terms-of-service', [\App\Http\Controllers\DocsController::class, 'terms'])->name('docs.terms');
+
 // Email/password authentication
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login'])->name('login.attempt');
@@ -64,6 +69,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/users/{user}/edit', [\App\Http\Controllers\Admin\UserController::class, 'edit'])->name('admin.users.edit');
         Route::post('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'update'])->name('admin.users.update');
         Route::post('/users/{user}/deactivate', [\App\Http\Controllers\Admin\UserController::class, 'deactivate'])->name('admin.users.deactivate');
+        Route::post('/users/{user}/activate', [\App\Http\Controllers\Admin\UserController::class, 'activate'])->name('admin.users.activate');
         Route::delete('/users/{user}', [\App\Http\Controllers\Admin\UserController::class, 'destroy'])->name('admin.users.destroy');
 
         // Schools index

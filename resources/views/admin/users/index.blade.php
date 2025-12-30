@@ -44,7 +44,7 @@
       <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
     </form>
 
-    <div id="users-results" class="mt-6">
+    <div id="users-results" class="mt-6 w-full min-w-0">
       @include('admin.users.partials.results', ['users' => $users])
     </div>
   </div>

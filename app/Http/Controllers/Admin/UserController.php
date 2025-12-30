@@ -279,10 +279,16 @@ class UserController extends Controller
 
     public function deactivate(User $user)
     {
-        // Soft deactivation: set password to random and mark email with suffix (optional)
-        $user->password = Hash::make(bin2hex(random_bytes(16)));
+        $user->is_active = false;
         $user->save();
         return back()->with('success', 'Pengguna dinonaktifkan');
+    }
+
+    public function activate(User $user)
+    {
+        $user->is_active = true;
+        $user->save();
+        return back()->with('success', 'Pengguna diaktifkan kembali');
     }
 
     public function destroy(Request $request, User $user)

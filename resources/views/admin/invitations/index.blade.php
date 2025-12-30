@@ -10,7 +10,7 @@
         <p class="text-sm text-slate-500">Kelola undangan masuk untuk memastikan onboarding pengguna berjalan cepat.</p>
       </div>
     </div>
-    <a href="{{ route('admin.invitations.create') }}" class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
+    <a href="{{ route('admin.invitations.create') }}" class="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
       @include('layouts.partials.icon', ['name' => 'sparkles', 'classes' => 'h-4 w-4 text-white'])
       Buat Undangan
     </a>
@@ -53,7 +53,7 @@
       <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
     </form>
 
-    <div id="invitations-results" class="mt-6">
+    <div id="invitations-results" class="mt-6 w-full min-w-0">
       <div class="space-y-4 px-5 py-6 md:hidden">
         @forelse ($invitationEntries as $entry)
           @php($inv = $entry['model'])
@@ -152,17 +152,17 @@
         @endforelse
       </div>
 
-      <div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block">
+      <div class="hidden mt-6 overflow-x-auto w-full max-w-[calc(100vw-4rem)] lg:max-w-full rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block">
       <table class="min-w-full text-sm">
         <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
           <tr>
-            <th class="px-5 py-3 text-left">Email</th>
-            <th class="px-5 py-3 text-left">Role</th>
-            <th class="px-5 py-3 text-left">Sekolah</th>
-            <th class="px-5 py-3 text-left">Link</th>
-            <th class="px-5 py-3 text-left">Kedaluwarsa</th>
-            <th class="px-5 py-3 text-left">Status</th>
-            <th class="px-5 py-3 text-right">Aksi</th>
+            <th class="px-2 py-2 text-left md:px-2 md:py-2">Email</th>
+            <th class="px-2 py-2 text-left md:px-2 md:py-2">Role</th>
+            <th class="px-2 py-2 text-left md:px-2 md:py-2">Sekolah</th>
+            <th class="px-2 py-2 text-left md:px-2 md:py-2">Link</th>
+            <th class="px-2 py-2 text-left md:px-2 md:py-2">Kedaluwarsa</th>
+            <th class="px-2 py-2 text-left md:px-2 md:py-2">Status</th>
+            <th class="px-2 py-2 text-center md:px-2 md:py-2">Aksi</th>
           </tr>
         </thead>
         <tbody class="divide-y divide-slate-100 text-slate-600">
@@ -171,13 +171,13 @@
         @php($names = $entry['schools'])
         @php($link = $entry['link'])
             <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
-              <td class="px-5 py-4 align-top">
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
                 <div class="space-y-1">
-                  <div class="font-semibold text-slate-900" title="{{ $inv->email }}" style="display:block; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $inv->email }}</div>
-                  <p class="text-xs text-slate-400">Token: {{ \Illuminate\Support\Str::limit($inv->token, 12) }}</p>
+                  <div class="font-semibold text-slate-900" title="{{ $inv->email }}">{{ \Illuminate\Support\Str::limit($inv->email, 25) }}</div>
+                  <p class="text-xs text-slate-400 break-all">Token: {{ \Illuminate\Support\Str::limit($inv->token, 12) }}</p>
                 </div>
               </td>
-              <td class="px-5 py-4 align-top">
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
                 <span class="inline-flex rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $inv->role === 'teacher' ? 'Guru' : \Illuminate\Support\Str::title($inv->role) }}</span>
                 @if($inv->role === 'teacher')
                   @php($typeLabel = \App\Support\TeacherOptions::teacherTypes()[$inv->teacher_type] ?? null)
@@ -188,35 +188,35 @@
                   </div>
                 @endif
               </td>
-              <td class="px-5 py-4 align-top">
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
                 <div class="flex flex-wrap gap-2">
                   @php($names = \App\Models\School::whereIn('id', (array) $inv->school_ids)->pluck('name'))
                   @forelse ($names as $name)
                     <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
                       <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                      {{ $name }}
+                      <span class="break-words">{{ $name }}</span>
                     </span>
                   @empty
                     <span class="text-xs text-slate-400">Tidak ditentukan</span>
                   @endforelse
                 </div>
               </td>
-              <td class="px-5 py-4 align-top">
-                <div class="flex items-center gap-2 text-xs font-semibold">
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
+                <div class="flex flex-col gap-2 text-xs font-semibold sm:flex-row sm:items-center">
                   <a href="#" class="js-view-link inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-indigo-600 transition-all duration-300 ease-in-out hover:bg-indigo-100" data-link="{{ $link }}">
                     @include('layouts.partials.icon', ['name' => 'eye', 'classes' => 'h-3.5 w-3.5'])
-                    Lihat
+                    <span class="hidden sm:inline">Lihat</span>
                   </a>
                   <a href="#" class="js-copy-link inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-500 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600" data-link="{{ $link }}">
                     @include('layouts.partials.icon', ['name' => 'copy', 'classes' => 'h-3.5 w-3.5'])
-                    Salin
+                    <span class="hidden sm:inline">Salin</span>
                   </a>
                 </div>
               </td>
-              <td class="px-5 py-4 align-top">
-                <p class="text-sm text-slate-500">{{ $inv->expires_at ? $inv->expires_at->format('d M Y H:i') : '—' }}</p>
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
+                <p class="text-sm text-slate-500 break-words">{{ $inv->expires_at ? $inv->expires_at->format('d M Y H:i') : '—' }}</p>
               </td>
-              <td class="px-5 py-4 align-top">
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
                 @if ($inv->used_at)
                   <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-500">Digunakan</span>
                 @elseif ($inv->expires_at && now()->greaterThan($inv->expires_at))
@@ -225,16 +225,22 @@
                   <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-500">Aktif</span>
                 @endif
               </td>
-              <td class="px-5 py-4 align-top">
-                <div class="flex items-center justify-end gap-2 pr-1">
+              <td class="px-2 py-2 align-top md:px-2 md:py-2">
+                <div class="flex flex-col items-center gap-2 pr-1 sm:flex-row sm:justify-center">
                   @if (!$inv->used_at)
                     <form action="{{ route('admin.invitations.resend', $inv) }}" method="post" class="inline js-confirm" data-message="Perbarui kedaluwarsa undangan untuk {{ $inv->email }}?" data-variant="success">
                       @csrf
-                      <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-all duration-300 ease-in-out hover:bg-emerald-100">@include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-3.5 w-3.5']) Perbarui</button>
+                      <button type="submit" class="inline-flex items-center justify-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-all duration-300 ease-in-out hover:bg-emerald-100">
+                        @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-3.5 w-3.5'])
+                        <span class="hidden sm:inline">Perbarui</span>
+                      </button>
                     </form>
                     <form action="{{ route('admin.invitations.revoke', $inv) }}" method="post" class="inline js-confirm" data-message="Cabut undangan ini?" data-variant="danger">
                       @csrf
-                      <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">@include('layouts.partials.icon', ['name' => 'shield-alert', 'classes' => 'h-3.5 w-3.5']) Cabut</button>
+                      <button type="submit" class="inline-flex items-center justify-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">
+                        @include('layouts.partials.icon', ['name' => 'shield-alert', 'classes' => 'h-3.5 w-3.5'])
+                        <span class="hidden sm:inline">Cabut</span>
+                      </button>
                     </form>
                   @else
                     <span class="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-400">Selesai</span>

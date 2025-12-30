@@ -142,6 +142,7 @@
     </form>
   </div>
 
+  @if($user->is_active)
   <form action="{{ route('admin.users.deactivate', $user) }}" method="post" class="flex items-center justify-between gap-4 rounded-xl border border-amber-200 bg-amber-50 p-6 text-sm text-amber-600 shadow-sm shadow-amber-100/60 js-confirm" data-message="Nonaktifkan pengguna ini?" data-variant="warning">
     @csrf
     <div>
@@ -153,6 +154,19 @@
       Nonaktifkan
     </button>
   </form>
+  @else
+  <form action="{{ route('admin.users.activate', $user) }}" method="post" class="flex items-center justify-between gap-4 rounded-xl border border-emerald-200 bg-emerald-50 p-6 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60 js-confirm" data-message="Aktifkan kembali pengguna ini?" data-variant="success">
+    @csrf
+    <div>
+      <p class="text-sm font-semibold text-emerald-600">Aktifkan akun pengguna ini</p>
+      <p class="mt-1 text-xs text-emerald-500">Pengguna akan dapat masuk kembali ke sistem.</p>
+    </div>
+    <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-emerald-300 bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-600 transition-all duration-300 ease-in-out hover:bg-emerald-200">
+      @include('layouts.partials.icon', ['name' => 'check-circle', 'classes' => 'h-4 w-4'])
+      Aktifkan
+    </button>
+  </form>
+  @endif
 </div>
 
 @push('scripts')

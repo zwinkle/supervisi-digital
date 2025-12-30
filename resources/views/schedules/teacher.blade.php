@@ -10,10 +10,10 @@
                 <p class="text-sm text-slate-500">Pantau agenda supervisi Anda dan unggah dokumen pendukung tepat waktu.</p>
             </div>
         </div>
-        <span class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-slate-500 shadow-sm shadow-slate-200/70">
+        <!-- <span class="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-medium uppercase tracking-[0.2em] text-slate-500 shadow-sm shadow-slate-200/70">
             @include('layouts.partials.icon', ['name' => 'timeline', 'classes' => 'h-4 w-4 text-indigo-500'])
             Mode Guru
-        </span>
+        </span> -->
     </div>
 
     @if (session('success'))

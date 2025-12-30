@@ -153,30 +153,32 @@
                 <div class="rounded-xl border border-slate-200 bg-[#F9FAFB] px-4 py-3 text-sm text-slate-600">
                     <span class="font-semibold">Email Google: </span>{{ $user->google_email ?? '-' }}
                 </div>
-                <div class="rounded-xl @if($tokenExpiryWarning) border-amber-200 bg-amber-50/70 @else border-slate-200 bg-[#F9FAFB] @endif px-4 py-3 text-sm @if($tokenExpiryWarning) text-amber-600 @else text-slate-600 @endif">
+                <!-- <div class="rounded-xl @if($tokenExpiryWarning) border-amber-200 bg-amber-50/70 @else border-slate-200 bg-[#F9FAFB] @endif px-4 py-3 text-sm @if($tokenExpiryWarning) text-amber-600 @else text-slate-600 @endif">
                     <span class="font-semibold">Kedaluwarsa Token: </span>{{ optional($user->google_token_expires_at)->format('d-m-Y H:i') ?? '-' }}
                     @if($tokenExpiryWarning && !$isTokenExpired)
-                        <span class="block mt-1 text-xs">⚠️ Token akan kadaluarsa dalam {{ $user->google_token_expires_at->diffInDays(now()) }} hari</span>
+                        <span class="block mt-1 text-xs">Token akan kadaluarsa dalam {{ $user->google_token_expires_at->diffInDays(now()) }} hari</span>
                     @endif
-                </div>
+                </div> -->
                 @if($isTokenExpired)
                 <div class="rounded-xl border-rose-200 bg-rose-50/70 px-4 py-3 text-sm text-rose-600 md:col-span-2">
-                    <span class="font-semibold">⚠️ Perhatian: </span>Token Google Anda telah expired. Anda tidak dapat mengupload file sampai token diperbarui. Gunakan tombol "Perbarui Izin" di bawah.
+                    <span class="font-semibold">Perhatian: </span>Token Google Anda telah expired. Anda tidak dapat mengupload file sampai token diperbarui. Gunakan tombol "Perbarui Izin" di bawah.
                 </div>
                 @endif
             </div>
             <div class="mt-6 flex flex-wrap gap-3">
-                <form action="{{ route('profile.google.disconnect') }}" method="post">
+                <form action="{{ route('profile.google.disconnect') }}" method="post" class="js-confirm" data-message="Apakah Anda yakin ingin memutuskan tautan akun Google? Anda tidak dapat mengunggah file baru hingga terhubung kembali." data-variant="danger">
                     @csrf
                     <button type="submit" class="inline-flex items-center gap-2 rounded-xl bg-rose-500 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-rose-200/60 transition-all duration-300 ease-in-out hover:opacity-90">
                         @include('layouts.partials.icon', ['name' => 'shield-x', 'classes' => 'h-4 w-4 text-white'])
                         Putuskan Tautan
                     </button>
                 </form>
-                <a href="{{ route('google.redirect') }}" class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-100/70 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-100">
-                    @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-4 w-4 text-indigo-500'])
-                    Perbarui Izin
-                </a>
+                <form action="{{ route('google.redirect') }}" method="get" class="js-confirm" data-message="Perbarui izin akses Google Workspace? Anda akan diarahkan ke halaman login Google." data-variant="primary">
+                    <button type="submit" class="inline-flex items-center gap-2 rounded-xl border border-indigo-200 bg-indigo-50 px-4 py-2.5 text-sm font-semibold text-indigo-700 shadow-sm shadow-indigo-100/70 transition-all duration-300 ease-in-out hover:border-indigo-300 hover:bg-indigo-100">
+                        @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-4 w-4 text-indigo-500'])
+                        Perbarui Izin
+                    </button>
+                </form>
             </div>
         @else
             <div class="mt-6 space-y-4">

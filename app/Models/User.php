@@ -57,6 +57,7 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
             'google_token_expires_at' => 'datetime',
+            'is_active' => 'boolean',
         ];
     }
 

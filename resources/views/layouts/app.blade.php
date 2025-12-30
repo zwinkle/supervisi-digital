@@ -1,8 +1,8 @@
 <!DOCTYPE html>
-<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full scroll-smooth">
+<html lang="{{ str_replace('_', '-', app()->getLocale()) }}" class="h-full scroll-smooth overflow-x-hidden">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0">
     <title>{{ $title ?? 'Supervisi Digital' }}</title>
     <link rel="icon" type="image/x-icon" href="{{ asset('favicon.ico') }}">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -67,7 +67,7 @@
                 padding-left: var(--sidebar-expanded-width);
                 transition: padding-left 0.25s ease-in-out;
                 will-change: padding-left;
-                max-width: 100vw;
+                max-width: 100%;
                 overflow-x: hidden;
             }
 
@@ -279,7 +279,7 @@
                                         @include('layouts.partials.icon', ['name' => 'user-circle', 'classes' => 'h-4 w-4 text-slate-400'])
                                         Profil Saya
                                     </a>
-                                    <form action="{{ route('logout') }}" method="post" class="mt-2">
+                                    <form action="{{ route('logout') }}" method="post" class="mt-2 js-confirm" data-message="Apakah Anda yakin ingin keluar?" data-variant="danger">
                                         @csrf
                                         <button type="submit" class="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-slate-600 transition-all duration-300 ease-in-out hover:bg-rose-50 hover:text-rose-700">
                                             <span>Keluar</span>
@@ -396,7 +396,6 @@
             };
 
             const closeSidebar = () => {
-                if (window.innerWidth >= 1024) return;
                 sidebar.classList.add('-translate-x-full');
                 overlay.classList.add('hidden');
             };
@@ -513,12 +512,41 @@
             const openConfirm = (message, variant) => {
                 confirmMessage.textContent = message || 'Apakah Anda yakin ingin melanjutkan?';
                 setConfirmVariant(variant || 'danger');
+                setConfirmVariant(variant || 'danger');
                 confirmModal.classList.remove('hidden');
+                confirmModal.classList.add('flex');
+                
+                // Hide sidebar collapse handle
+                const collapseHandle = document.getElementById('sidebar-collapse-handle');
+                if (collapseHandle) {
+                    collapseHandle.style.opacity = '0';
+                    collapseHandle.style.pointerEvents = 'none';
+                }
             };
 
             const closeConfirm = () => {
                 confirmModal.classList.add('hidden');
-                confirmForm = null;
+                confirmModal.classList.remove('flex');
+                if (confirmForm) {
+                    confirmForm.removeAttribute('data-intercepted');
+                    confirmForm = null;
+                }
+                // Show sidebar collapse handle when modal is closed
+                const collapseHandle = document.getElementById('sidebar-collapse-handle');
+                if (collapseHandle) {
+                    collapseHandle.classList.remove('confirm-modal-open');
+                    // Ensure it's visible if not in another modal (though here we just remove the specific class)
+                    // But we should use the same logic as viewer modal:
+                    collapseHandle.classList.remove('viewer-modal-open'); // reusing this class or just direct style
+                    // Actually, let's reuse 'viewer-modal-open' or make a generic one.
+                    // The viewer modal logic used 'viewer-modal-open'. Let's use 'modal-open' style opacity:0.
+                    // But existing CSS for #sidebar-collapse-handle.viewer-modal-open uses display: none !important;
+                    // I need to add CSS for confirm-modal-open or reuse viewer-modal-open.
+                    // Let's just use 'viewer-modal-open' for simplicity or add a new rule.
+                    // Better: I will add the CSS rule for 'modal-open' or similar.
+                    collapseHandle.style.opacity = '';
+                    collapseHandle.style.pointerEvents = '';
+                }
             };
 
             confirmCancel?.addEventListener('click', closeConfirm);

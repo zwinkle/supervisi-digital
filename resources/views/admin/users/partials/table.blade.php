@@ -69,13 +69,13 @@
             @include('layouts.partials.icon', ['name' => 'pencil', 'classes' => 'h-3.5 w-3.5'])
             Edit
           </a>
-          <form action="{{ route('admin.users.deactivate', $u) }}" method="post" class="inline js-confirm" data-message="Nonaktifkan pengguna ini?" data-variant="warning">
+          {{-- <form action="{{ route('admin.users.deactivate', $u) }}" method="post" class="inline js-confirm" data-message="Nonaktifkan pengguna ini?" data-variant="warning">
             @csrf
             <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 font-semibold text-amber-600 transition-all duration-300 ease-in-out hover:bg-amber-100">
               @include('layouts.partials.icon', ['name' => 'shield-alert', 'classes' => 'h-3.5 w-3.5'])
               Nonaktif
             </button>
-          </form>
+          </form> --}}
           <form action="{{ route('admin.users.destroy', $u) }}" method="post" class="inline js-confirm" data-message="Hapus pengguna ini secara permanen? Tindakan ini tidak dapat dibatalkan." data-variant="danger">
             @csrf
             @method('DELETE')
@@ -92,16 +92,16 @@
   @endforelse
 </div>
 
-<div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="users-table">
+<div class="hidden mt-6 overflow-x-auto w-full max-w-[calc(100vw-4rem)] lg:max-w-full rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block" id="users-table">
   <table class="min-w-full text-sm">
     <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
       <tr>
-        <th class="px-5 py-3 text-left">Pengguna</th>
-        <th class="px-5 py-3 text-left">Peran</th>
-        <th class="px-5 py-3 text-left">Sekolah</th>
-        <th class="px-5 py-3 text-left">Admin</th>
-        <th class="px-5 py-3 text-left">Google</th>
-        <th class="px-5 py-3 text-right">Aksi</th>
+        <th class="px-2 py-2 text-left md:px-5 md:py-3">Pengguna</th>
+        <th class="px-2 py-2 text-left md:px-5 md:py-3">Peran</th>
+        <th class="px-2 py-2 text-left md:px-5 md:py-3">Sekolah</th>
+        {{-- <th class="px-5 py-3 text-left">Admin</th> --}}
+        <th class="px-2 py-2 text-left md:px-5 md:py-3">Google</th>
+        <th class="px-2 py-2 text-right md:px-5 md:py-3">Aksi</th>
       </tr>
     </thead>
     <tbody class="divide-y divide-slate-100 text-slate-600">
@@ -122,16 +122,16 @@
           $role = $roles ? implode(', ', $roles) : 'Belum ada peran';
         @endphp
         <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
-          <td class="px-5 py-4 align-top">
+          <td class="px-2 py-3 align-top md:px-5 md:py-4">
             <div class="flex items-start gap-3">
-              <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-indigo-50 text-sm font-semibold text-indigo-500">{{ Str::upper(Str::substr($u->name, 0, 2)) }}</div>
-              <div class="space-y-1">
-                <p class="font-semibold text-slate-900">{{ $u->name }}</p>
-                <p class="text-xs text-slate-400">{{ $u->email }}</p>
+              <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-indigo-50 text-sm font-semibold text-indigo-500">{{ Str::upper(Str::substr($u->name, 0, 2)) }}</div>
+              <div class="min-w-0 space-y-1">
+                <p class="font-semibold text-slate-900 break-words">{{ $u->name }}</p>
+                <p class="text-xs text-slate-400" title="{{ $u->email }}">{{ \Illuminate\Support\Str::limit($u->email, 25) }}</p>
               </div>
             </div>
           </td>
-          <td class="px-5 py-4 align-top">
+          <td class="px-2 py-3 align-top md:px-5 md:py-4">
             <span class="inline-flex items-center rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">{{ $role }}</span>
             @if($u->teacher_type_label || $u->teacher_detail_label)
               <div class="mt-2 space-y-1 text-xs text-slate-500">
@@ -140,35 +140,38 @@
               </div>
             @endif
           </td>
-          <td class="px-5 py-4 align-top">
+          <td class="px-2 py-3 align-top md:px-5 md:py-4">
             <div class="space-y-1 text-xs text-slate-500">
               @forelse ($u->schools as $sch)
-                <p>{{ $sch->name }}</p>
+                <p class="break-words">{{ $sch->name }}</p>
               @empty
                 <span class="text-xs text-slate-400">Belum terhubung</span>
               @endforelse
             </div>
           </td>
-          <td class="px-5 py-4 align-top">
+          {{-- <td class="px-5 py-4 align-top">
             <span class="text-xs font-semibold {{ $u->is_admin ? 'text-emerald-500' : 'text-slate-400' }}">{{ $u->is_admin ? 'Ya' : 'Tidak' }}</span>
+          </td> --}}
+          <td class="px-2 py-3 align-top md:px-5 md:py-4">
+            <span class="text-xs text-slate-500" title="{{ $u->google_email }}">{{ \Illuminate\Support\Str::limit($u->google_email, 25) ?? 'Belum terhubung' }}</span>
           </td>
-          <td class="px-5 py-4 align-top">
-            <span class="text-xs text-slate-500">{{ $u->google_email ?? 'Belum terhubung' }}</span>
-          </td>
-          <td class="px-5 py-4 align-top">
-            <div class="flex items-center justify-end gap-2 pr-1">
+          <td class="px-2 py-3 align-top md:px-5 md:py-4">
+            <div class="flex flex-col items-end gap-2 pr-1 sm:flex-row">
               <a href="{{ route('admin.users.edit', $u) }}" class="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600">
                 @include('layouts.partials.icon', ['name' => 'pencil', 'classes' => 'h-3.5 w-3.5'])
-                Edit
+                <span class="hidden sm:inline">Edit</span>
               </a>
-              <form action="{{ route('admin.users.deactivate', $u) }}" method="post" class="inline js-confirm" data-message="Nonaktifkan pengguna ini?" data-variant="warning">
+              {{-- <form action="{{ route('admin.users.deactivate', $u) }}" method="post" class="inline js-confirm" data-message="Nonaktifkan pengguna ini?" data-variant="warning">
                 @csrf
                 <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-600 transition-all duration-300 ease-in-out hover:bg-amber-100">@include('layouts.partials.icon', ['name' => 'shield-alert', 'classes' => 'h-3.5 w-3.5']) Nonaktif</button>
-              </form>
+              </form> --}}
               <form action="{{ route('admin.users.destroy', $u) }}" method="post" class="inline js-confirm" data-message="Hapus pengguna ini secara permanen? Tindakan ini tidak dapat dibatalkan." data-variant="danger">
                 @csrf
                 @method('DELETE')
-                <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">@include('layouts.partials.icon', ['name' => 'trash', 'classes' => 'h-3.5 w-3.5']) Hapus</button>
+                <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">
+                  @include('layouts.partials.icon', ['name' => 'trash', 'classes' => 'h-3.5 w-3.5'])
+                  <span class="hidden sm:inline">Hapus</span>
+                </button>
               </form>
             </div>
           </td>

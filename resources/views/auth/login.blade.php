@@ -23,12 +23,12 @@
             @csrf
             <div class="space-y-2">
                 <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Email</label>
-                <input type="email" name="email" value="{{ old('email') }}" required class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                <input type="email" name="email" value="{{ old('email') }}" required autocomplete="username" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
             </div>
             <div class="space-y-2">
                 <label class="text-xs font-semibold uppercase tracking-wide text-slate-400">Kata sandi</label>
                 <div class="group relative">
-                    <input type="password" name="password" required class="js-pass w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-12 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
+                    <input type="password" name="password" required autocomplete="current-password" class="js-pass w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 pr-12 text-sm text-slate-700 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" />
                     <button type="button" class="js-toggle-pass absolute inset-y-0 right-0 flex items-center justify-center rounded-xl border border-transparent px-3 text-slate-400 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-500" aria-label="Tampilkan atau sembunyikan kata sandi"></button>
                 </div>
             </div>
