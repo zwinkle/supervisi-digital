@@ -88,7 +88,13 @@
       </div>
     </article>
   @empty
-    <div class="rounded-2xl border border-slate-200 bg-[#F9FAFB] px-4 py-5 text-center text-sm text-slate-400">Tidak ada data pengguna ditemukan.</div>
+    <div class="col-span-full">
+        <x-empty-state 
+            title="Belum ada data pengguna" 
+            :message="request('q') ? 'Tidak ada data ditemukan untuk pencarian ' . request('q') : 'Belum ada data pengguna.'"
+            icon="users"
+        />
+    </div>
   @endforelse
 </div>
 
@@ -178,7 +184,15 @@
         </tr>
       @empty
         <tr>
-          <td colspan="6" class="px-5 py-8 text-center text-sm text-slate-400">Tidak ada data pengguna ditemukan.</td>
+          <td colspan="6" class="p-6">
+            <x-empty-state 
+              title="Belum ada data pengguna" 
+              :message="request('q') ? 'Tidak ada data ditemukan untuk pencarian ' . request('q') : 'Mulai dengan menambahkan pengguna baru.'"
+              icon="users"
+              actionLabel="Tambah Pengguna"
+              {{-- :actionRoute="route('admin.users.create')" --}}
+            />
+          </td>
         </tr>
       @endforelse
     </tbody>

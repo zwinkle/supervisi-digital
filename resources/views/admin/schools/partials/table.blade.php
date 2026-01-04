@@ -25,7 +25,12 @@
       </div>
     </article>
   @empty
-    <div class="rounded-2xl border border-slate-200 bg-[#F9FAFB] px-4 py-5 text-center text-sm text-slate-400">Belum ada data sekolah.</div>
+    <div class="col-span-full">
+        <x-empty-state 
+            title="Belum ada data" 
+            :message="request('q') ? 'Tidak ada data ditemukan untuk pencarian ' . request('q') : 'Belum ada data sekolah.'"
+        />
+    </div>
   @endforelse
 </div>
 
@@ -69,7 +74,14 @@
         </tr>
       @empty
         <tr>
-          <td colspan="3" class="px-5 py-8 text-center text-sm text-slate-400">Belum ada data sekolah.</td>
+          <td colspan="3" class="p-6">
+            <x-empty-state 
+              title="Belum ada data sekolah" 
+              :message="request('q') ? 'Tidak ada data ditemukan untuk pencarian ' . request('q') : 'Mulai dengan menambahkan data sekolah baru.'"
+              actionLabel="Tambah Sekolah"
+              :actionRoute="route('admin.schools.create')"
+            />
+          </td>
         </tr>
       @endforelse
     </tbody>

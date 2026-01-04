@@ -103,49 +103,30 @@ class UserController extends Controller
     }
     public function index(Request $request)
     {
-        $filter = Str::lower((string) $request->input('filter', 'name'));
-        $allowedFilters = collect(['name', 'email', 'teacher_type', 'school']);
-        if (!$allowedFilters->contains($filter)) {
-            $filter = 'name';
-        }
-
         $q = trim((string) $request->input('q', ''));
         $search = $q !== '' ? Str::lower($q) : null;
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20])) {
+            $perPage = 10;
+        }
 
         $usersQuery = User::query()
             ->with(['schools' => function ($relation) {
                 $relation->orderBy('name');
             }]);
 
-        // Only apply filters when there's a search query
-        if ($search !== null && $search !== '') {
-            $usersQuery->where(function ($query) use ($filter, $search) {
-                switch ($filter) {
-                    case 'email':
-                        $query->whereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
-                        break;
-                    case 'teacher_type':
-                        $query->where(function ($sub) use ($search) {
-                            $sub->whereRaw('LOWER(COALESCE(teacher_type, "")) LIKE ?', ["%{$search}%"])
-                                ->orWhereRaw('LOWER(COALESCE(subject, "")) LIKE ?', ["%{$search}%"])
-                                ->orWhereRaw('LOWER(COALESCE(class_name, "")) LIKE ?', ["%{$search}%"])
-                                ->orWhereRaw("LOWER(CASE WHEN teacher_type = 'subject' THEN 'guru mata pelajaran' WHEN teacher_type = 'class' THEN 'guru kelas' ELSE '' END) LIKE ?", ["%{$search}%"]);
-                        });
-                        break;
-                    case 'school':
-                        $query->whereHas('schools', function ($relation) use ($search) {
-                            $relation->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-                        });
-                        break;
-                    case 'name':
-                    default:
-                        $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-                        break;
-                }
+        if ($search) {
+            $usersQuery->where(function ($query) use ($search) {
+                $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+                    ->orWhere('nip', 'LIKE', "%{$search}%")
+                    ->orWhereHas('schools', function ($schoolQuery) use ($search) {
+                        $schoolQuery->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                    });
             });
         }
 
-        $users = $usersQuery->orderBy('name')->get();
+        $users = $usersQuery->orderBy('name')->paginate($perPage)->withQueryString();
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -158,7 +139,6 @@ class UserController extends Controller
         return view('admin.users.index', [
             'users' => $users,
             'q' => $q,
-            'filter' => $filter,
         ]);
     }
 
@@ -296,13 +276,35 @@ class UserController extends Controller
         if ($request->user()->id === $user->id) {
             return back()->with('error', 'Tidak dapat menghapus akun Anda sendiri.');
         }
-        // Detach relations then hard delete
+
         try {
-            $user->schools()->detach();
+            \Illuminate\Support\Facades\DB::transaction(function () use ($user) {
+                // 1. Hapus Invitations (Manual, tidak ada cascade di DB)
+                \App\Models\Invitation::where('invited_by', $user->id)->delete();
+
+                // 2. Hapus Files yang diupload user ini (Cascading ke usage lain jika ada)
+                // Walaupun ada cascadeOnDelete di migration, explicit delete lebih aman
+                // untuk menghindari orphan state saat foreign key check berjalan.
+                \App\Models\File::where('owner_user_id', $user->id)->delete();
+
+                // 3. Detach dari sekolah (Pivot)
+                $user->schools()->detach();
+
+                // 4. Hapus Jadwal yang terkait (sebagai Supervisor atau Guru)
+                // Ini akan men-trigger cascade delete ke Submissions dan Evaluations di level DB
+                \App\Models\Schedule::where('supervisor_id', $user->id)
+                    ->orWhere('teacher_id', $user->id)
+                    ->delete();
+
+                // 5. Akhirnya hapus user
+                $user->delete();
+            });
+
+            return redirect()->route('admin.users.index')->with('success', 'Pengguna dan data terkait berhasil dihapus.');
         } catch (\Throwable $e) {
-            // ignore
+            // Log error untuk debugging admin
+            \Illuminate\Support\Facades\Log::error('Gagal menghapus user: ' . $e->getMessage());
+            return back()->with('error', 'Gagal menghapus pengguna. Masih ada data yang terkait erat atau terjadi kesalahan sistem.');
         }
-        $user->delete();
-        return redirect()->route('admin.users.index')->with('success', 'Pengguna dihapus.');
     }
 }

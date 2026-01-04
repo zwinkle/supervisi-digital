@@ -23,20 +23,20 @@
           <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
             @include('layouts.partials.icon', ['name' => 'search', 'classes' => 'h-4 w-4'])
           </span>
-          <input type="text" name="q" value="{{ $q }}" placeholder="Cari sekolah" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
+          <input type="text" name="q" value="{{ $q }}" placeholder="Cari nama sekolah atau alamat..." class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
         </div>
-        <select name="filter" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:w-48">
-          @foreach (['name' => 'Sekolah', 'address' => 'Alamat'] as $key => $label)
-            <option value="{{ $key }}" @selected($filter === $key)>{{ $label }}</option>
-          @endforeach
-        </select>
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500">Baris:</span>
+            <select name="per_page" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                <option value="10" @selected(request('per_page', 10) == 10)>10</option>
+                <option value="20" @selected(request('per_page') == 20)>20</option>
+            </select>
+        </div>
       </div>
       <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
     </form>
 
-    @if (session('success'))
-      <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">{{ session('success') }}</div>
-    @endif
+
 
     <div id="schools-results" class="mt-6">
       @include('admin.schools.partials.results', ['schools' => $schools])

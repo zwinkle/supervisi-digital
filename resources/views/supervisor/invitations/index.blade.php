@@ -44,211 +44,24 @@
           <input type="text" name="q" value="{{ request('q') }}" placeholder="Cari email undangan" class="w-full rounded-xl border border-slate-200 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-600 placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200" autocomplete="off">
         </div>
         <select name="status" class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 md:w-48">
-          <option value="all" @selected(request('status', 'all') === 'all')">Semua Status</option>
-          <option value="active" @selected(request('status') === 'active')">Aktif</option>
-          <option value="used" @selected(request('status') === 'used')">Digunakan</option>
-          <option value="expired" @selected(request('status') === 'expired')">Kedaluwarsa</option>
+          <option value="all" @selected(request('status', 'all') === 'all')>Semua Status</option>
+          <option value="active" @selected(request('status') === 'active')>Aktif</option>
+          <option value="used" @selected(request('status') === 'used')>Digunakan</option>
+          <option value="expired" @selected(request('status') === 'expired')>Kedaluwarsa</option>
         </select>
+        <div class="flex items-center gap-2">
+            <span class="text-xs font-semibold text-slate-500">Baris:</span>
+            <select name="per_page" class="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200">
+                <option value="10" @selected(request('per_page') == 10)>10</option>
+                <option value="20" @selected(request('per_page', 20) == 20)>20</option>
+            </select>
+        </div>
       </div>
       <div class="text-xs text-slate-400">Pencarian diperbarui otomatis saat Anda mengetik.</div>
     </form>
 
     <div id="supervisor-invitations-results" class="mt-6">
-    <div class="space-y-4 md:hidden">
-      @forelse ($invitationEntries as $entry)
-        @php($invitation = $entry['model'])
-        @php($schools = $entry['schools'])
-        @php($link = $entry['link'])
-        <article class="space-y-4 rounded-2xl border border-slate-200 bg-[#F9FAFB] p-5 shadow-sm shadow-slate-200/60">
-          <div class="space-y-1">
-            <p class="text-base font-semibold text-slate-900 break-all">{{ $invitation->email }}</p>
-            <p class="text-xs text-slate-400">Token: {{ Str::limit($invitation->token, 10) }}</p>
-          </div>
-          <div class="space-y-3 text-xs text-slate-500">
-            @php($typeLabel = \App\Support\TeacherOptions::teacherTypes()[$invitation->teacher_type] ?? null)
-            @php($detail = $invitation->teacher_type === 'subject' ? ($invitation->teacher_subject ?? null) : ($invitation->teacher_type === 'class' ? ($invitation->teacher_class ? 'Kelas '.$invitation->teacher_class : null) : null))
-            <div class="space-y-1">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Jenis Guru</p>
-              <div class="flex flex-wrap gap-2">
-                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
-                  <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                  {{ $typeLabel ?? '—' }}
-                </span>
-                <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
-                  <span class="h-2 w-2 rounded-full bg-slate-300"></span>
-                  {{ $detail ?? '—' }}
-                </span>
-              </div>
-            </div>
-            <div class="space-y-1">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Sekolah</p>
-              <div class="flex flex-wrap gap-2">
-                @forelse ($schools as $school)
-                  <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-white px-3 py-1 font-medium text-slate-600">
-                    <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                    {{ $school }}
-                  </span>
-                @empty
-                  <span class="text-xs text-slate-400">Belum ditentukan</span>
-                @endforelse
-              </div>
-            </div>
-            <div class="space-y-1">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Kedaluwarsa</p>
-              <p class="font-semibold text-slate-600">{{ $invitation->expires_at ? $invitation->expires_at->format('d M Y H:i') : '—' }}</p>
-            </div>
-            <div class="space-y-1">
-              <p class="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-400">Status</p>
-              @if ($invitation->used_at)
-                <span class="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 font-semibold text-emerald-500">Digunakan</span>
-              @elseif ($invitation->expires_at && now()->greaterThan($invitation->expires_at))
-                <span class="inline-flex items-center rounded-full bg-rose-50 px-3 py-1 font-semibold text-rose-500">Kedaluwarsa</span>
-              @else
-                <span class="inline-flex items-center rounded-full bg-indigo-50 px-3 py-1 font-semibold text-indigo-500">Aktif</span>
-              @endif
-            </div>
-          </div>
-          <div class="space-y-2">
-            <div class="flex flex-wrap gap-2">
-              <a href="#" class="js-view-link inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-semibold text-indigo-600 transition-all duration-300 ease-in-out hover:bg-indigo-100" data-link="{{ $link }}">
-                @include('layouts.partials.icon', ['name' => 'eye', 'classes' => 'h-3.5 w-3.5'])
-                Lihat link
-              </a>
-              <a href="#" class="js-copy-link inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-500 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600" data-link="{{ $link }}">
-                @include('layouts.partials.icon', ['name' => 'copy', 'classes' => 'h-3.5 w-3.5'])
-                Salin
-              </a>
-            </div>
-            <div class="flex flex-wrap gap-2">
-              @if (!$invitation->used_at)
-                <form action="{{ route('supervisor.invitations.resend', $invitation) }}" method="post" class="inline js-confirm" data-message="Perbarui kedaluwarsa undangan untuk {{ $invitation->email }}?" data-variant="success">
-                  @csrf
-                  <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-all duration-300 ease-in-out hover:bg-emerald-100">
-                    @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-3.5 w-3.5'])
-                    Perbarui
-                  </button>
-                </form>
-                <form action="{{ route('supervisor.invitations.revoke', $invitation) }}" method="post" class="inline js-confirm" data-message="Cabut undangan ini?" data-variant="danger">
-                  @csrf
-                  <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">
-                    @include('layouts.partials.icon', ['name' => 'shield-alert', 'classes' => 'h-3.5 w-3.5'])
-                    Cabut
-                  </button>
-                </form>
-              @else
-                <span class="inline-flex rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-400">Selesai</span>
-              @endif
-            </div>
-          </div>
-        </article>
-      @empty
-        <div class="rounded-2xl border border-slate-200 bg-[#F9FAFB] px-4 py-5 text-center text-sm text-slate-400">Belum ada undangan yang dibuat.</div>
-      @endforelse
-    </div>
-
-    <div class="hidden mt-6 overflow-x-auto rounded-xl border border-slate-200 bg-white shadow-sm shadow-slate-200/40 md:block">
-      <table class="min-w-full text-sm">
-        <thead class="bg-[#F9FAFB] text-xs font-medium uppercase tracking-[0.18em] text-slate-400">
-          <tr>
-            <th class="px-5 py-3 text-left">Email</th>
-            <th class="px-5 py-3 text-left">Sekolah</th>
-            <th class="px-5 py-3 text-left">Link Undangan</th>
-            <th class="px-5 py-3 text-left">Kedaluwarsa</th>
-            <th class="px-5 py-3 text-left">Status</th>
-            <th class="px-5 py-3 text-right">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-slate-100 text-slate-600">
-      @forelse ($invitationEntries as $entry)
-        @php($invitation = $entry['model'])
-        @php($schools = $entry['schools'])
-        @php($link = $entry['link'])
-            <tr class="group transition-all duration-300 ease-in-out hover:bg-slate-50">
-              <td class="px-5 py-4 align-top">
-                <div class="space-y-1">
-                  <div class="font-semibold text-slate-900" title="{{ $invitation->email }}" style="display:block; max-width:240px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">{{ $invitation->email }}</div>
-                  <p class="text-xs text-slate-400">Token: {{ Str::limit($invitation->token, 10) }}</p>
-                </div>
-                @php($typeLabel = \App\Support\TeacherOptions::teacherTypes()[$invitation->teacher_type] ?? null)
-                @php($detail = $invitation->teacher_type === 'subject' ? ($invitation->teacher_subject ?? null) : ($invitation->teacher_type === 'class' ? ($invitation->teacher_class ? 'Kelas '.$invitation->teacher_class : null) : null))
-                <div class="mt-2 space-y-1 text-xs text-slate-500">
-                  <div><span class="font-semibold text-slate-600">Jenis:</span> {{ $typeLabel ?? '—' }}</div>
-                  <div><span class="font-semibold text-slate-600">Detail:</span> {{ $detail ?? '—' }}</div>
-                </div>
-              </td>
-              <td class="px-5 py-4 align-top">
-                <div class="flex flex-wrap gap-2">
-                  @forelse ($schools as $school)
-                    <span class="inline-flex items-center gap-2 rounded-full border border-slate-200 px-3 py-1 text-xs font-medium text-slate-600">
-                      <span class="h-2 w-2 rounded-full bg-indigo-400"></span>
-                      {{ $school }}
-                    </span>
-                  @empty
-                    <span class="text-xs text-slate-400">Belum ditentukan</span>
-                  @endforelse
-                </div>
-              </td>
-              <td class="px-5 py-4 align-top">
-                <div class="flex items-center gap-2 text-xs font-semibold">
-                  <a href="#" class="js-view-link inline-flex items-center gap-1 rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-indigo-600 transition-all duration-300 ease-in-out hover:bg-indigo-100" data-link="{{ $link }}">
-                    @include('layouts.partials.icon', ['name' => 'eye', 'classes' => 'h-3.5 w-3.5'])
-                    Lihat
-                  </a>
-                  <a href="#" class="js-copy-link inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-slate-500 transition-all duration-300 ease-in-out hover:border-indigo-200 hover:text-indigo-600" data-link="{{ $link }}">
-                    @include('layouts.partials.icon', ['name' => 'copy', 'classes' => 'h-3.5 w-3.5'])
-                    Salin
-                  </a>
-                </div>
-              </td>
-              <td class="px-5 py-4 align-top">
-                <p class="text-sm text-slate-500">{{ $invitation->expires_at ? $invitation->expires_at->format('d M Y H:i') : '—' }}</p>
-              </td>
-              <td class="px-5 py-4 align-top">
-                @if ($invitation->used_at)
-                  <span class="rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-500">Digunakan</span>
-                @elseif ($invitation->expires_at && now()->greaterThan($invitation->expires_at))
-                  <span class="rounded-full bg-rose-50 px-3 py-1 text-xs font-semibold text-rose-500">Kedaluwarsa</span>
-                @else
-                  <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-500">Aktif</span>
-                @endif
-              </td>
-              <td class="px-5 py-4 align-top">
-                <div class="flex items-center justify-end gap-2 pr-1">
-                  @if (!$invitation->used_at)
-                    <form action="{{ route('supervisor.invitations.resend', $invitation) }}" method="post" class="inline js-confirm" data-message="Perbarui kedaluwarsa undangan untuk {{ $invitation->email }}?" data-variant="success">
-                      @csrf
-                      <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-600 transition-all duration-300 ease-in-out hover:bg-emerald-100">
-                        @include('layouts.partials.icon', ['name' => 'refresh', 'classes' => 'h-3.5 w-3.5'])
-                        Perbarui
-                      </button>
-                    </form>
-                    <form action="{{ route('supervisor.invitations.revoke', $invitation) }}" method="post" class="inline js-confirm" data-message="Cabut undangan ini?" data-variant="danger">
-                      @csrf
-                      <button type="submit" class="inline-flex items-center gap-1 rounded-lg border border-rose-200 bg-rose-50 px-3 py-1.5 text-xs font-semibold text-rose-600 transition-all duration-300 ease-in-out hover:bg-rose-100">
-                        @include('layouts.partials.icon', ['name' => 'shield-alert', 'classes' => 'h-3.5 w-3.5'])
-                        Cabut
-                      </button>
-                    </form>
-                  @else
-                    <span class="rounded-lg bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-400">Selesai</span>
-                  @endif
-                </div>
-              </td>
-            </tr>
-          @empty
-            <tr>
-              <td colspan="6" class="px-5 py-8 text-center text-sm text-slate-400">Belum ada undangan yang dibuat.</td>
-            </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
-
-    @if (method_exists($invitations, 'hasPages') && $invitations->hasPages())
-      <div class="px-6 py-4">
-        {{ $invitations->links('vendor.pagination.tailwind') }}
-      </div>
-    @endif
+      @include('supervisor.invitations.partials.results')
     </div>
   </div>
 </div>

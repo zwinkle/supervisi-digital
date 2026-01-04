@@ -16,6 +16,12 @@ class GoogleController extends Controller
 {
     public function redirect(): RedirectResponse
     {
+        // Jika user melakukan "Perbarui Izin" dari halaman profil,
+        // kita ingin memastikan mereka kembali ke profile setelah auth.
+        if (Auth::check()) {
+            session()->put('url.intended', route('profile.index'));
+        }
+
         $scopes = Config::get('services.google.scopes', []);
         $redirectUrl = Config::get('services.google.redirect');
         Log::info('Google OAuth redirect URL', ['redirect' => $redirectUrl, 'scopes' => $scopes]);

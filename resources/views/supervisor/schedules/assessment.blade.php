@@ -2,11 +2,7 @@
 
 @section('content')
 <div class="space-y-10">
-  @if (session('success'))
-    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">
-      {{ session('success') }}
-    </div>
-  @endif
+
 
   <div class="flex flex-col gap-6 rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40 md:flex-row md:items-center md:justify-between">
     <div class="space-y-2">
@@ -131,7 +127,7 @@
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
-              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen')) ? '' : 'disabled' }}
+              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
               @if($schedule->manual_rpp_score) value="{{ $schedule->manual_rpp_score }}" @endif>
             <p class="mt-1 text-xs text-slate-500">Skor 0-100</p>
           </div>
@@ -142,7 +138,7 @@
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
-              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen')) ? '' : 'disabled' }}
+              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
               @if($schedule->manual_pembelajaran_score) value="{{ $schedule->manual_pembelajaran_score }}" @endif>
             <p class="mt-1 text-xs text-slate-500">Skor 0-100</p>
           </div>
@@ -153,19 +149,19 @@
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
-              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen')) ? '' : 'disabled' }}
+              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
               @if($schedule->manual_asesmen_score) value="{{ $schedule->manual_asesmen_score }}" @endif>
             <p class="mt-1 text-xs text-slate-500">Skor 0-100</p>
           </div>
         </div>
         
-        @if(!$schedule->hasSubmissionFor('rpp') || !$schedule->hasSubmissionFor('pembelajaran') || !$schedule->hasSubmissionFor('asesmen'))
+        @if(!$schedule->hasSubmissionFor('rpp') || !$schedule->hasSubmissionFor('pembelajaran') || !$schedule->hasSubmissionFor('asesmen') || !$schedule->hasSubmissionFor('administrasi'))
           <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
             <div class="flex items-start gap-2">
               @include('layouts.partials.icon', ['name' => 'alert-triangle', 'classes' => 'h-5 w-5 text-amber-600 mt-0.5'])
               <div>
                 <p class="text-sm font-medium text-amber-800">Input skor evaluasi tidak dapat dilakukan</p>
-                <p class="text-xs text-amber-700 mt-1">Supervisor dapat melakukan input skor evaluasi setelah guru mengupload semua berkas yang diperlukan (RPP, Pembelajaran, dan Asesmen).</p>
+                <p class="text-xs text-amber-700 mt-1">Supervisor dapat melakukan input skor evaluasi setelah guru mengupload semua berkas yang diperlukan (RPP, Pembelajaran, Asesmen, dan Administrasi).</p>
               </div>
             </div>
           </div>
@@ -235,15 +231,34 @@
               @endif
             </div>
           </div>
+          <div class="flex items-center justify-between p-3 rounded-lg border border-slate-200 bg-slate-50">
+            <div class="flex items-center gap-3">
+              @include('layouts.partials.icon', ['name' => 'folder', 'classes' => 'h-5 w-5 text-slate-500'])
+              <span class="text-sm font-medium text-slate-700">Dokumen Administrasi</span>
+            </div>
+            <div class="flex items-center gap-2">
+              @if($schedule->hasSubmissionFor('administrasi'))
+                <span class="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-700">
+                  @include('layouts.partials.icon', ['name' => 'check-circle', 'classes' => 'h-3 w-3'])
+                  Sudah diupload
+                </span>
+              @else
+                <span class="inline-flex items-center gap-1 rounded-full bg-red-100 px-2.5 py-1 text-xs font-medium text-red-700">
+                  @include('layouts.partials.icon', ['name' => 'x-circle', 'classes' => 'h-3 w-3'])
+                  Belum diupload
+                </span>
+              @endif
+            </div>
+          </div>
         </div>
         
-        @if(!$schedule->hasSubmissionFor('rpp') || !$schedule->hasSubmissionFor('pembelajaran') || !$schedule->hasSubmissionFor('asesmen'))
+        @if(!$schedule->hasSubmissionFor('rpp') || !$schedule->hasSubmissionFor('pembelajaran') || !$schedule->hasSubmissionFor('asesmen') || !$schedule->hasSubmissionFor('administrasi'))
           <div class="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3">
             <div class="flex items-start gap-2">
               @include('layouts.partials.icon', ['name' => 'alert-triangle', 'classes' => 'h-5 w-5 text-amber-600 mt-0.5'])
               <div>
                 <p class="text-sm font-medium text-amber-800">Upload hasil supervisi tidak dapat dilakukan</p>
-                <p class="text-xs text-amber-700 mt-1">Supervisor dapat melakukan upload hasil supervisi setelah guru mengupload semua berkas yang diperlukan (RPP, Pembelajaran, dan Asesmen).</p>
+                <p class="text-xs text-amber-700 mt-1">Supervisor dapat melakukan upload hasil supervisi setelah guru mengupload semua berkas yang diperlukan (RPP, Pembelajaran, Asesmen, dan Administrasi).</p>
               </div>
             </div>
           </div>
@@ -270,14 +285,14 @@
             <input type="file" name="evaluation_file" accept=".pdf,.doc,.docx" 
               class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
-              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen')) ? '' : 'disabled' }}>
+              {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}>
             <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX. Maksimal 10MB</p>
           </div>
 
           <button type="submit" 
             class="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-blue-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md shadow-indigo-200/60 transition-all duration-300 ease-in-out hover:opacity-90
-            {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen')) ? '' : 'opacity-50 cursor-not-allowed' }}"
-            {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen')) ? '' : 'disabled' }}>
+            {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'opacity-50 cursor-not-allowed' }}"
+            {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}>
             @include('layouts.partials.icon', ['name' => 'upload', 'classes' => 'h-4 w-4 text-white'])
             {{ $schedule->uploaded_evaluation_file ? 'Ganti File' : 'Upload File' }}
           </button>
@@ -287,6 +302,33 @@
   </div>
 
   <div id="manual-evaluation-section" class="{{ $schedule->evaluation_method === 'manual' ? '' : 'hidden' }}">
+    
+    <!-- Status Administrasi (Manual Mode) -->
+    <div class="mb-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm shadow-slate-200/40">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-50 text-indigo-500">
+                    @include('layouts.partials.icon', ['name' => 'folder', 'classes' => 'h-6 w-6'])
+                </div>
+                <div>
+                    <h3 class="text-base font-semibold text-slate-900">Dokumen Administrasi</h3>
+                    <p class="text-sm text-slate-500">Kelengkapan berkas administrasi guru.</p>
+                </div>
+            </div>
+            @if($schedule->hasSubmissionFor('administrasi'))
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-emerald-100 px-3 py-1.5 text-sm font-medium text-emerald-700">
+                    @include('layouts.partials.icon', ['name' => 'check-circle', 'classes' => 'h-4 w-4'])
+                    Sudah Diupload
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 rounded-full bg-red-100 px-3 py-1.5 text-sm font-medium text-red-700">
+                    @include('layouts.partials.icon', ['name' => 'x-circle', 'classes' => 'h-4 w-4'])
+                    Belum Diupload
+                </span>
+            @endif
+        </div>
+    </div>
+
     <div class="grid gap-6 md:grid-cols-3">
     @foreach ($cards as $type => $meta)
       @php($evaluation = $evalByType->get($type))
@@ -330,49 +372,7 @@
     @endforeach
   </div>
 
-  @if ($evalByType->count() > 0)
-    <div class="rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40">
-      <h2 class="text-lg font-semibold text-slate-900">Ringkasan Penilaian</h2>
-      <p class="mt-1 text-sm text-slate-500">Gunakan ringkasan ini sebagai bahan diskusi tindak lanjut dengan guru terkait.</p>
-      <div class="mt-5 grid gap-4 md:grid-cols-3">
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">RPP</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900">
-            @if($schedule->evaluation_method === 'upload' && $schedule->manual_rpp_score)
-              {{ $schedule->manual_rpp_score }}
-            @else
-              {{ optional($evalByType->get('rpp'))->total_score ?? '—' }}
-            @endif
-          </p>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Pembelajaran</p>
-          <div class="mt-2 flex items-center justify-between">
-            <span class="text-lg font-semibold text-slate-900">
-              @if($schedule->evaluation_method === 'upload' && $schedule->manual_pembelajaran_score)
-                {{ $schedule->manual_pembelajaran_score }}
-              @else
-                {{ optional($evalByType->get('pembelajaran'))->total_score ?? '—' }}
-              @endif
-            </span>
-            @if ($schedule->evaluation_method === 'manual' && optional($evalByType->get('pembelajaran'))->category)
-              <span class="rounded-full bg-indigo-100 px-2.5 py-1 text-xs font-semibold text-indigo-500">{{ optional($evalByType->get('pembelajaran'))->category }}</span>
-            @endif
-          </div>
-        </div>
-        <div class="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">
-          <p class="text-xs font-semibold uppercase tracking-[0.18em] text-slate-400">Asesmen</p>
-          <p class="mt-2 text-lg font-semibold text-slate-900">
-            @if($schedule->evaluation_method === 'upload' && $schedule->manual_asesmen_score)
-              {{ $schedule->manual_asesmen_score }}
-            @else
-              {{ optional($evalByType->get('asesmen'))->total_score ?? '—' }}
-            @endif
-          </p>
-        </div>
-      </div>
-    </div>
-  @endif
+
   </div>
 </div>
 @endsection

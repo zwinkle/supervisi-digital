@@ -23,11 +23,7 @@
         </div>
     </div>
 
-    @if (session('success'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">
-            {{ session('success') }}
-        </div>
-    @endif
+
 
     <div class="grid gap-6 lg:grid-cols-2">
         <section class="space-y-4 rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-md shadow-slate-200/40">

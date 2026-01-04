@@ -11,33 +11,23 @@ class SchoolController extends Controller
 {
     public function index(Request $request)
     {
-        $filter = Str::lower((string) $request->input('filter', 'name'));
-        $allowedFilters = collect(['name', 'address']);
-        if (!$allowedFilters->contains($filter)) {
-            $filter = 'name';
-        }
-
         $q = trim((string) $request->input('q', ''));
         $search = $q !== '' ? Str::lower($q) : null;
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20])) {
+            $perPage = 10;
+        }
 
         $schoolsQuery = School::query();
 
-        // Only apply filters when there's a search query
-        if ($search !== null && $search !== '') {
-            $schoolsQuery->where(function ($query) use ($filter, $search) {
-                switch ($filter) {
-                    case 'address':
-                        $query->whereRaw('LOWER(COALESCE(address, "")) LIKE ?', ["%{$search}%"]);
-                        break;
-                    case 'name':
-                    default:
-                        $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-                        break;
-                }
+        if ($search) {
+            $schoolsQuery->where(function ($query) use ($search) {
+                $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                    ->orWhereRaw('LOWER(COALESCE(address, \'\')) LIKE ?', ["%{$search}%"]);
             });
         }
 
-        $schools = $schoolsQuery->orderBy('name')->get();
+        $schools = $schoolsQuery->orderBy('name')->paginate($perPage)->withQueryString();
 
         if ($request->wantsJson()) {
             return response()->json([
@@ -50,7 +40,6 @@ class SchoolController extends Controller
         return view('admin.schools.index', [
             'schools' => $schools,
             'q' => $q,
-            'filter' => $filter,
         ]);
     }
     public function create()
@@ -65,7 +54,7 @@ class SchoolController extends Controller
             'address' => ['nullable','string','max:500'],
         ]);
         School::create($data);
-        return redirect()->route('admin.dashboard')->with('success', 'Sekolah berhasil dibuat');
+        return redirect()->route('admin.schools.index')->with('success', 'Sekolah berhasil dibuat');
     }
 
     public function edit(School $school)

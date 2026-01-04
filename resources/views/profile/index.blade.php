@@ -27,32 +27,7 @@
         </div>
     </div>
 
-    @if (session('error'))
-        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 shadow-sm shadow-rose-100/60">
-            <div class="flex">
-                <div class="flex-shrink-0">
-                    @include('layouts.partials.icon', ['name' => 'exclamation-triangle', 'classes' => 'h-5 w-5 text-rose-400'])
-                </div>
-                <div class="ml-3">
-                    <h3 class="text-sm font-medium text-rose-800">Terjadi Kesalahan</h3>
-                    <div class="mt-2 text-sm text-rose-700">
-                        <p>{{ session('error') }}</p>
-                        @if(str_contains(session('error'), 'expired') || str_contains(session('error'), 'token'))
-                            <p class="mt-2">Solusi: Gunakan tombol "Perbarui Izin" di bawah untuk memperbarui token Google Anda.</p>
-                        @endif
-                    </div>
-                </div>
-            </div>
-        </div>
-    @endif
 
-    @if (session('success'))
-        <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">{{ session('success') }}</div>
-    @endif
-
-    @if (session('error'))
-        <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600 shadow-sm shadow-rose-100/60">{{ session('error') }}</div>
-    @endif
 
     <div class="grid gap-6 lg:grid-cols-2">
         <div class="rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-md shadow-slate-200/40">

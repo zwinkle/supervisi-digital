@@ -13,17 +13,16 @@ class UserController extends Controller
     {
         $user = $request->user();
         $schoolIds = $user->schools()->wherePivot('role','supervisor')->pluck('schools.id');
-        $filter = Str::lower((string) $request->input('filter', 'name'));
-        $allowedFilters = collect(['name', 'email', 'teacher_type', 'school']);
-        if (!$allowedFilters->contains($filter)) {
-            $filter = 'name';
-        }
 
         $q = trim((string) $request->input('q', ''));
         $search = $q !== '' ? Str::lower($q) : null;
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20])) {
+            $perPage = 10;
+        }
 
         if ($schoolIds->isEmpty()) {
-            $teachers = collect();
+            $teachers = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
         } else {
             $teachersQuery = User::query()
                 ->with(['schools' => function ($relation) {
@@ -34,37 +33,20 @@ class UserController extends Controller
                         ->where('school_user.role', 'teacher');
                 });
 
-            // Only apply filters when there's a search query
-            if ($search !== null && $search !== '') {
-                $teachersQuery->where(function ($query) use ($filter, $search, $schoolIds) {
-                    switch ($filter) {
-                        case 'email':
-                            $query->whereRaw('LOWER(email) LIKE ?', ["%{$search}%"]);
-                            break;
-                        case 'teacher_type':
-                            $query->where(function ($sub) use ($search) {
-                                $sub->whereRaw('LOWER(COALESCE(teacher_type, "")) LIKE ?', ["%{$search}%"])
-                                    ->orWhereRaw('LOWER(COALESCE(subject, "")) LIKE ?', ["%{$search}%"])
-                                    ->orWhereRaw('LOWER(COALESCE(class_name, "")) LIKE ?', ["%{$search}%"])
-                                    ->orWhereRaw("LOWER(CASE WHEN teacher_type = 'subject' THEN 'guru mata pelajaran' WHEN teacher_type = 'class' THEN 'guru kelas' ELSE '' END) LIKE ?", ["%{$search}%"]);
-                            });
-                            break;
-                        case 'school':
-                            $query->whereHas('schools', function ($relation) use ($search, $schoolIds) {
-                                $relation->whereIn('schools.id', $schoolIds)
-                                    ->where('school_user.role', 'teacher')
-                                    ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-                            });
-                            break;
-                        case 'name':
-                        default:
-                            $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
-                            break;
-                    }
+            if ($search) {
+                $teachersQuery->where(function ($query) use ($search, $schoolIds) {
+                    $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(email) LIKE ?', ["%{$search}%"])
+                        ->orWhereRaw('LOWER(nip) LIKE ?', ["%{$search}%"])
+                        ->orWhereHas('schools', function ($relation) use ($search, $schoolIds) {
+                            $relation->whereIn('schools.id', $schoolIds)
+                                ->where('school_user.role', 'teacher')
+                                ->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"]);
+                        });
                 });
             }
 
-            $teachers = $teachersQuery->orderBy('name')->get();
+            $teachers = $teachersQuery->orderBy('name')->paginate($perPage)->withQueryString();
         }
 
         if ($request->wantsJson()) {
@@ -78,7 +60,6 @@ class UserController extends Controller
         return view('supervisor.users.index', [
             'teachers' => $teachers,
             'q' => $q,
-            'filter' => $filter,
         ]);
     }
 }

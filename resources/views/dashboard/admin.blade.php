@@ -12,12 +12,7 @@
     </div>
   </div>
 
-  @if (session('success'))
-    <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-4 text-sm text-emerald-600 shadow-sm shadow-emerald-100/60">{{ session('success') }}</div>
-  @endif
-  @if (session('error'))
-    <div class="rounded-xl border border-rose-200 bg-rose-50 px-5 py-4 text-sm text-rose-600 shadow-sm shadow-rose-100/60">{{ session('error') }}</div>
-  @endif
+
 
   <!-- Statistics Section -->
   <div class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">

@@ -14,8 +14,13 @@ class ScheduleController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $q = $request->input('q');
-        $filter = $request->input('filter', 'all');
+        $month = $request->input('month');
+        $year = $request->input('year', date('Y'));
+
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20])) {
+            $perPage = 10;
+        }
 
         $query = Schedule::with([
                 'school',
@@ -26,32 +31,26 @@ class ScheduleController extends Controller
             ])
             ->where('supervisor_id', $user->id);
 
-        // Only apply filters when there's a search query
-        if ($q && trim($q) !== '') {
-            $query->where(function ($query) use ($q, $filter) {
-                if ($filter === 'teacher' || $filter === 'all') {
-                    $query->orWhereHas('teacher', function ($teacherQuery) use ($q) {
-                        $teacherQuery->where('name', 'LIKE', '%' . $q . '%');
-                    });
-                }
-                if ($filter === 'school' || $filter === 'all') {
-                    $query->orWhereHas('school', function ($schoolQuery) use ($q) {
-                        $schoolQuery->where('name', 'LIKE', '%' . $q . '%');
-                    });
-                }
-            });
+        if ($month && $year) {
+            $query->whereYear('date', $year)
+                  ->whereMonth('date', $month);
+        } elseif ($year) {
+            $query->whereYear('date', $year);
         }
 
-        $schedules = $query->orderByDesc('date')->get();
+        $schedules = $query->orderByDesc('date')->paginate($perPage)->withQueryString();
 
         if ($request->wantsJson()) {
-            $html = view('schedules.supervisor', compact('schedules'))->render();
-            preg_match('/<div class="space-y-4" id="supervisor-schedules-results">(.*?)<\/div>\s*<\/div>\s*@push/s', $html, $matches);
-            $resultsHtml = $matches[1] ?? '';
-            return response()->json(['html' => $resultsHtml]);
+            return response()->json([
+                'html' => view('schedules.partials.supervisor_list', [
+                    'schedules' => $schedules,
+                ])->render(),
+            ]);
         }
 
-        return view('schedules.supervisor', compact('schedules'));
+        return view('schedules.supervisor', [
+            'schedules' => $schedules,
+        ]);
     }
 
     public function assessment(Request $request, Schedule $schedule)
@@ -85,6 +84,7 @@ class ScheduleController extends Controller
                 'rpp' => $schedule->hasSubmissionFor('rpp'),
                 'pembelajaran' => $schedule->hasSubmissionFor('pembelajaran'),
                 'asesmen' => $schedule->hasSubmissionFor('asesmen'),
+                'administrasi' => $schedule->hasSubmissionFor('administrasi'),
             ],
         ]);
     }

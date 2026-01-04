@@ -474,9 +474,20 @@
                     const toast = button.closest('[data-toast]');
                     if (toast) {
                         toast.classList.add('translate-y-2', 'opacity-0');
-                        setTimeout(() => toast.remove(), 180);
+                        setTimeout(() => toast.remove(), 300);
                     }
                 });
+            });
+
+            // Auto-dismiss toasts after 5 seconds
+            const toasts = document.querySelectorAll('[data-toast]');
+            toasts.forEach((toast) => {
+                setTimeout(() => {
+                    if (toast && document.body.contains(toast)) {
+                        toast.classList.add('translate-y-2', 'opacity-0');
+                        setTimeout(() => toast.remove(), 300);
+                    }
+                }, 5000);
             });
 
             const confirmVariants = {

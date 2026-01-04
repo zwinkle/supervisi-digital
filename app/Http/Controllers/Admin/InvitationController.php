@@ -41,13 +41,17 @@ class InvitationController extends Controller
                   ->where('expires_at', '<=', now());
         }
 
-        $invitations = $query->orderByDesc('created_at')->paginate(20);
+        $perPage = (int) $request->input('per_page', 20);
+        if (!in_array($perPage, [10, 20])) {
+            $perPage = 20;
+        }
+
+        $invitations = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         if ($request->wantsJson()) {
-            $html = view('admin.invitations.index', compact('invitations'))->render();
-            preg_match('/<div id="invitations-results">(.*?)<\/div>\s*<\/div>\s*<\/div>\s*@push/s', $html, $matches);
-            $resultsHtml = $matches[1] ?? '';
-            return response()->json(['html' => $resultsHtml]);
+            return response()->json([
+                'html' => view('admin.invitations.partials.results', compact('invitations'))->render(),
+            ]);
         }
 
         return view('admin.invitations.index', compact('invitations'));

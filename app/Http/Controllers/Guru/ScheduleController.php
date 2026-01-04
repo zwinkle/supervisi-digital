@@ -26,13 +26,17 @@ class ScheduleController extends Controller
             $query->whereYear('date', $year);
         }
 
-        $schedules = $query->orderByDesc('date')->get();
+        $perPage = (int) $request->input('per_page', 10);
+        if (!in_array($perPage, [10, 20])) {
+            $perPage = 10;
+        }
+
+        $schedules = $query->orderByDesc('date')->paginate($perPage)->withQueryString();
 
         if ($request->wantsJson()) {
-            $html = view('schedules.teacher', compact('schedules'))->render();
-            preg_match('/<div class="space-y-4" id="teacher-schedules-results">(.*?)<\/div>\s*<\/div>\s*@push/s', $html, $matches);
-            $resultsHtml = $matches[1] ?? '';
-            return response()->json(['html' => $resultsHtml]);
+            return response()->json([
+                'html' => view('schedules.partials.teacher_list', compact('schedules'))->render(),
+            ]);
         }
 
         return view('schedules.teacher', compact('schedules'));
