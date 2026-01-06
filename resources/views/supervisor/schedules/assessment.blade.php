@@ -124,33 +124,42 @@
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Skor RPP</label>
             <input type="number" name="scores[rpp]" min="0" max="100" step="0.5" 
-              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('scores.rpp') border-red-500 @enderror"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
-              @if($schedule->manual_rpp_score) value="{{ $schedule->manual_rpp_score }}" @endif>
+              value="{{ old('scores.rpp', $schedule->manual_rpp_score) }}">
+            @error('scores.rpp')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            @enderror
             <p class="mt-1 text-xs text-slate-500">Skor 0-100</p>
           </div>
           
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Skor Pembelajaran</label>
             <input type="number" name="scores[pembelajaran]" min="0" max="100" step="0.5"
-              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('scores.pembelajaran') border-red-500 @enderror"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
-              @if($schedule->manual_pembelajaran_score) value="{{ $schedule->manual_pembelajaran_score }}" @endif>
+              value="{{ old('scores.pembelajaran', $schedule->manual_pembelajaran_score) }}">
+            @error('scores.pembelajaran')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            @enderror
             <p class="mt-1 text-xs text-slate-500">Skor 0-100</p>
           </div>
           
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Skor Asesmen</label>
             <input type="number" name="scores[asesmen]" min="0" max="100" step="0.5"
-              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('scores.asesmen') border-red-500 @enderror"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
-              @if($schedule->manual_asesmen_score) value="{{ $schedule->manual_asesmen_score }}" @endif>
+              value="{{ old('scores.asesmen', $schedule->manual_asesmen_score) }}">
+            @error('scores.asesmen')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            @enderror
             <p class="mt-1 text-xs text-slate-500">Skor 0-100</p>
           </div>
         </div>
@@ -283,9 +292,12 @@
               </div>
             @endif
             <input type="file" name="evaluation_file" accept=".pdf,.doc,.docx" 
-              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200"
+              class="w-full rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm text-slate-600 file:mr-4 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-indigo-700 hover:file:bg-indigo-100 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('evaluation_file') border-red-500 @enderror"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}>
+            @error('evaluation_file')
+                <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
+            @enderror
             <p class="mt-1 text-xs text-slate-500">Format: PDF, DOC, DOCX. Maksimal 10MB</p>
           </div>
 

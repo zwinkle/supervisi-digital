@@ -47,6 +47,17 @@ class GoogleController extends Controller
                     return redirect()->route('profile.index')
                         ->with('error', 'Tautkan akun Google yang sama dengan email terdaftar ('.$current->email.').');
                 }
+                
+                // Cek apakah google_id ini sudah dipakai user lain
+                $existingUser = User::where('google_id', $googleUser->getId())
+                    ->where('id', '!=', $current->id)
+                    ->exists();
+                    
+                if ($existingUser) {
+                    return redirect()->route('profile.index')
+                        ->with('error', 'Akun Google ini sudah ditautkan dengan pengguna lain. Silakan masuk menggunakan akun Google tersebut atau hubungi admin.');
+                }
+
                 // Update token ke akun saat ini (jangan override nama jika sudah ada)
                 if (empty($current->name)) {
                     $current->name = $googleUser->getName() ?: $current->name;
@@ -64,31 +75,44 @@ class GoogleController extends Controller
                 return redirect()->route('profile.index')->with('success', 'Akun Google berhasil ditautkan.');
             }
 
-            // Jika tidak login, fallback: cari user berdasarkan google_id atau email
-            $user = User::where('google_id', $googleUser->getId())
-                ->orWhere('email', $googleUser->getEmail())
-                ->first();
+            // Jika tidak login, flow: Login atau Register
+            // 1. Cari berdasarkan Google ID (Match paling kuat)
+            $user = User::where('google_id', $googleUser->getId())->first();
 
+            // 2. Jika tidak ketemu, cari berdasarkan Email
             if (!$user) {
-                $user = new User();
-                $user->email = $googleUser->getEmail();
+                $user = User::where('email', $googleUser->getEmail())->first();
+                
+                if ($user) {
+                    // Ketemu by Email, berarti ini User lama yang belum link Google
+                    // Update Google ID mereka
+                    $user->google_id = $googleUser->getId();
+                    // Lanjut update token di bawah...
+                } else {
+                    // 3. Tidak ketemu ID maupun Email -> Register User Baru
+                    $user = new User();
+                    $user->email = $googleUser->getEmail();
+                    $user->google_id = $googleUser->getId();
+                }
             }
-
+            
+            // Common User Update (Sync Profile & Tokens)
             if (empty($user->name)) {
                 $user->name = $googleUser->getName() ?: $user->name;
             }
             $user->avatar = $googleUser->getAvatar() ?: $user->avatar;
-            $user->google_id = $googleUser->getId();
             $user->google_access_token = $googleUser->token;
-            // Always update refresh token if provided (Google only provides it on first consent)
+            // Always update refresh token if provided
             if ($googleUser->refreshToken) {
                 $user->google_refresh_token = $googleUser->refreshToken;
             }
             $user->google_token_expires_at = $expiresAt;
             $user->google_email = $googleUser->getEmail() ?: $user->google_email;
+            
             if (empty($user->password)) {
                 $user->password = Hash::make(Str::random(40));
             }
+            
             $user->save();
 
             Auth::login($user, true);
