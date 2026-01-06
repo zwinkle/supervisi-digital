@@ -293,6 +293,18 @@ class ScheduleController extends Controller
         $user = $request->user();
         if ($schedule->supervisor_id !== $user->id) abort(403);
 
+        // Sanitize scores (comma -> dot)
+        if ($request->has('scores')) {
+            $scores = $request->input('scores');
+            foreach ($scores as $key => $val) {
+                // Ensure $val is scalar (not array) before string manipulation
+                 if (is_string($val) || is_numeric($val)) {
+                    $scores[$key] = str_replace(',', '.', $val);
+                 }
+            }
+            $request->merge(['scores' => $scores]);
+        }
+
         $request->validate([
             'evaluation_file' => 'required|file|mimes:pdf,doc,docx|max:10240', // max 10MB
             'scores.rpp' => 'required|numeric|min:0|max:100',

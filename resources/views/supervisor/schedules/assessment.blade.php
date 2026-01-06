@@ -123,12 +123,14 @@
         <div class="grid gap-4 md:grid-cols-3">
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Skor RPP</label>
-            <input type="number" name="scores[rpp]" min="0" max="100" step="0.5" 
+            <input type="text" name="scores[rpp]" inputmode="decimal"
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('scores.rpp') border-red-500 @enderror"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
-              value="{{ old('scores.rpp', $schedule->manual_rpp_score) }}">
+              value="{{ old('scores.rpp', $schedule->manual_rpp_score) }}"
+              oninput="validateScoreInput(this)"
+              onkeydown="preventInvalidChars(event)">
             @error('scores.rpp')
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
             @enderror
@@ -137,12 +139,14 @@
           
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Skor Pembelajaran</label>
-            <input type="number" name="scores[pembelajaran]" min="0" max="100" step="0.5"
+            <input type="text" name="scores[pembelajaran]" inputmode="decimal"
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('scores.pembelajaran') border-red-500 @enderror"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
-              value="{{ old('scores.pembelajaran', $schedule->manual_pembelajaran_score) }}">
+              value="{{ old('scores.pembelajaran', $schedule->manual_pembelajaran_score) }}"
+              oninput="validateScoreInput(this)"
+              onkeydown="preventInvalidChars(event)">
             @error('scores.pembelajaran')
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
             @enderror
@@ -151,12 +155,14 @@
           
           <div>
             <label class="mb-1 block text-sm font-medium text-slate-700">Skor Asesmen</label>
-            <input type="number" name="scores[asesmen]" min="0" max="100" step="0.5"
+            <input type="text" name="scores[asesmen]" inputmode="decimal"
               class="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-200 @error('scores.asesmen') border-red-500 @enderror"
               placeholder="0-100"
               {{ $schedule->uploaded_evaluation_file ? '' : 'required' }}
               {{ ($schedule->hasSubmissionFor('rpp') && $schedule->hasSubmissionFor('pembelajaran') && $schedule->hasSubmissionFor('asesmen') && $schedule->hasSubmissionFor('administrasi')) ? '' : 'disabled' }}
-              value="{{ old('scores.asesmen', $schedule->manual_asesmen_score) }}">
+              value="{{ old('scores.asesmen', $schedule->manual_asesmen_score) }}"
+              oninput="validateScoreInput(this)"
+              onkeydown="preventInvalidChars(event)">
             @error('scores.asesmen')
                 <p class="mt-1 text-xs text-red-500">{{ $message }}</p>
             @enderror
@@ -457,6 +463,34 @@ function updateRadioStyling(selectedMethod) {
   } else if (selectedMethod === 'upload') {
     uploadOption.classList.remove('border-slate-200', 'bg-white');
     uploadOption.classList.add('border-indigo-500', 'bg-indigo-50');
+  }
+}
+// Validate score input real-time
+function validateScoreInput(input) {
+  // Replace comma with dot
+  input.value = input.value.replace(/,/g, '.');
+  
+  // Remove any non-digit chars except dot
+  input.value = input.value.replace(/[^0-9.]/g, '');
+  
+  // Prevent multiple dots
+  const parts = input.value.split('.');
+  if (parts.length > 2) {
+    input.value = parts[0] + '.' + parts.slice(1).join('');
+  }
+
+  // Parse value
+  const val = parseFloat(input.value);
+  if (!isNaN(val)) {
+    if (val > 100) input.value = '100';
+    if (val < 0) input.value = '0';
+  }
+}
+
+// Prevent invalid chars (e, E, +, -) for number fields
+function preventInvalidChars(e) {
+  if (['e', 'E', '+', '-'].includes(e.key)) {
+    e.preventDefault();
   }
 }
 </script>
