@@ -44,8 +44,13 @@ class GoogleController extends Controller
             if (Auth::check()) {
                 $current = Auth::user();
                 if (strcasecmp($googleUser->getEmail(), $current->email) !== 0) {
+                    Log::warning('Google Link Failed: Email Mismatch', [
+                        'user_id' => $current->id,
+                        'user_email' => $current->email,
+                        'google_email' => $googleUser->getEmail()
+                    ]);
                     return redirect()->route('profile.index')
-                        ->with('error', 'Tautkan akun Google yang sama dengan email terdaftar ('.$current->email.').');
+                        ->with('error', 'Tautkan akun Google yang sama dengan email terdaftar ('.$current->email.'). Email Google: '.$googleUser->getEmail());
                 }
                 
                 // Cek apakah google_id ini sudah dipakai user lain
@@ -54,6 +59,11 @@ class GoogleController extends Controller
                     ->exists();
                     
                 if ($existingUser) {
+                    Log::warning('Google Link Failed: Google ID Collision', [
+                        'user_id' => $current->id,
+                        'google_id' => $googleUser->getId(),
+                        'google_email' => $googleUser->getEmail()
+                    ]);
                     return redirect()->route('profile.index')
                         ->with('error', 'Akun Google ini sudah ditautkan dengan pengguna lain. Silakan masuk menggunakan akun Google tersebut atau hubungi admin.');
                 }

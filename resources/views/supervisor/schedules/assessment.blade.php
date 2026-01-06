@@ -282,6 +282,22 @@
             <h3 class="text-base font-semibold text-slate-900 mb-1">Upload File Hasil Supervisi</h3>
             <p class="text-sm text-slate-600 mb-4">Upload file hasil supervisi yang sudah jadi (PDF, DOC, DOCX) yang mencakup seluruh penilaian</p>
             
+            @if ($errors->any())
+              <div class="mb-4 rounded-lg border border-red-200 bg-red-50 p-3">
+                <div class="flex items-start gap-2">
+                  @include('layouts.partials.icon', ['name' => 'alert-triangle', 'classes' => 'h-5 w-5 text-red-600 mt-0.5'])
+                  <div class="text-sm text-red-700">
+                    <p class="font-medium">Terdapat kesalahan:</p>
+                    <ul class="list-inside list-disc mt-1">
+                      @foreach ($errors->all() as $error)
+                        <li>{{ $error }}</li>
+                      @endforeach
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            @endif
+
             @if($schedule->uploaded_evaluation_file)
               <div class="mb-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
                 <div class="flex items-center gap-2 text-sm text-emerald-700">
