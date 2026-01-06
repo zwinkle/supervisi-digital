@@ -47,7 +47,13 @@
       </div>
     </article>
   @empty
-    <div class="rounded-2xl border border-slate-200 bg-[#F9FAFB] px-4 py-5 text-center text-sm text-slate-400">Belum ada guru pada sekolah di bawah pengawasan Anda.</div>
+    <div class="col-span-full">
+        <x-empty-state 
+            title="Belum ada data guru" 
+            :message="request('q') ? 'Tidak ada data ditemukan untuk pencarian ' . request('q') : 'Belum ada guru pada sekolah di bawah pengawasan Anda.'"
+            icon="users"
+        />
+    </div>
   @endforelse
 </div>
 
@@ -93,7 +99,13 @@
         </tr>
       @empty
         <tr>
-          <td colspan="3" class="px-5 py-8 text-center text-sm text-slate-400">Belum ada guru pada sekolah di bawah pengawasan Anda.</td>
+          <td colspan="3">
+            <x-empty-state
+                title="Belum ada data guru"
+                :message="request('q') ? 'Tidak ada data ditemukan untuk pencarian ' . request('q') : 'Belum ada guru pada sekolah di bawah pengawasan Anda.'"
+                icon="users"
+            />
+          </td>
         </tr>
       @endforelse
     </tbody>

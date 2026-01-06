@@ -110,7 +110,6 @@
                         Edit Jadwal
                     </a>
                 </div>
-            </div>
         </div>
     </article>
 @empty
