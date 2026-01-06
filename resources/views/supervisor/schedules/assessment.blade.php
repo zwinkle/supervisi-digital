@@ -114,6 +114,8 @@
     </div>
 
     <!-- Form Upload -->
+    <form action="{{ route('supervisor.schedules.upload-evaluation', $schedule) }}" method="POST" enctype="multipart/form-data">
+    @csrf
     <div id="upload-form-section" class="mt-6 {{ $schedule->evaluation_method === 'upload' ? '' : 'hidden' }}">
       <!-- Input Skor untuk Metode Upload Manual -->
       <div class="space-y-4 rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40">
@@ -282,8 +284,7 @@
 
       <!-- Card Upload File -->
       <div class="mt-6 rounded-xl border border-slate-200 bg-white p-6 shadow-md shadow-slate-200/40">
-        <form action="{{ route('supervisor.schedules.upload-evaluation', $schedule) }}" method="POST" enctype="multipart/form-data" class="space-y-4">
-          @csrf
+        {{-- Inner form removed, outer form wraps everything --}}
           <div>
             <h3 class="text-base font-semibold text-slate-900 mb-1">Upload File Hasil Supervisi</h3>
             <p class="text-sm text-slate-600 mb-4">Upload file hasil supervisi yang sudah jadi (PDF, DOC, DOCX) yang mencakup seluruh penilaian</p>
@@ -330,8 +331,9 @@
             @include('layouts.partials.icon', ['name' => 'upload', 'classes' => 'h-4 w-4 text-white'])
             {{ $schedule->uploaded_evaluation_file ? 'Ganti File' : 'Upload File' }}
           </button>
-        </form>
       </div>
+    </div>
+    </form>
     </div>
   </div>
 
