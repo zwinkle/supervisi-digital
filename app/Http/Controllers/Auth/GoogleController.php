@@ -14,6 +14,10 @@ use Laravel\Socialite\Facades\Socialite;
 
 class GoogleController extends Controller
 {
+    /**
+     * Memulai proses login/integrasi akun Google.
+     * User akan diarahkan ke halaman izin Google untuk meminta akses profil dan email.
+     */
     public function redirect(): RedirectResponse
     {
         // Jika user melakukan "Perbarui Izin" dari halaman profil,
@@ -25,6 +29,9 @@ class GoogleController extends Controller
         $scopes = Config::get('services.google.scopes', []);
         $redirectUrl = Config::get('services.google.redirect');
         Log::info('Google OAuth redirect URL', ['redirect' => $redirectUrl, 'scopes' => $scopes]);
+        
+        // Meminta akses 'offline' untuk mendapatkan Refresh Token
+        // 'prompt' => 'consent' memaksa user menyetujui ulang agar refresh token rilis kembali
         return Socialite::driver('google')
             ->redirectUrl($redirectUrl)
             ->scopes($scopes)
@@ -32,17 +39,24 @@ class GoogleController extends Controller
             ->redirect();
     }
 
+    /**
+     * Menangani respon balik (callback) dari Google.
+     * Method ini menangani tiga skenario: Login biasa, registrasi user baru, atau menghubungkan akun Google (Linking).
+     */
     public function callback(): RedirectResponse
     {
         try {
+            // Ambil data user dari Google (stateless karena kita maintain session sendiri)
             $googleUser = Socialite::driver('google')->stateless()->user();
 
             $expiresIn = $googleUser->expiresIn ?? null;
             $expiresAt = $expiresIn ? now()->addSeconds($expiresIn) : null;
 
-            // Jika user sedang login (tautkan Google ke akun ini, wajib email sama)
+            // KASUS 1: User Sedang Login (Menautkan Akun / Linking)
+            // Jika user sudah login di aplikasi dan menekan tombol "Hubungkan Google", maka kita tautkan akunnya.
             if (Auth::check()) {
                 $current = Auth::user();
+                // Validasi: Email akun sekolah harus sama dengan email Google
                 if (strcasecmp($googleUser->getEmail(), $current->email) !== 0) {
                     Log::warning('Google Link Failed: Email Mismatch', [
                         'user_id' => $current->id,
@@ -53,7 +67,7 @@ class GoogleController extends Controller
                         ->with('error', 'Tautkan akun Google yang sama dengan email terdaftar ('.$current->email.'). Email Google: '.$googleUser->getEmail());
                 }
                 
-                // Cek apakah google_id ini sudah dipakai user lain
+                // Cek apakah google_id ini sudah dipakai user lain (User A pakai Gmail X, User B coba pakai Gmail X juga)
                 $existingUser = User::where('google_id', $googleUser->getId())
                     ->where('id', '!=', $current->id)
                     ->exists();
@@ -68,69 +82,79 @@ class GoogleController extends Controller
                         ->with('error', 'Akun Google ini sudah ditautkan dengan pengguna lain. Silakan masuk menggunakan akun Google tersebut atau hubungi admin.');
                 }
 
-                // Update token ke akun saat ini (jangan override nama jika sudah ada)
+                // Update token ke akun saat ini.
+                // Kita simpan refresh token jika Google memberikannya (biasanya hanya saat prompt consent).
                 if (empty($current->name)) {
                     $current->name = $googleUser->getName() ?: $current->name;
                 }
                 $current->avatar = $googleUser->getAvatar() ?: $current->avatar;
                 $current->google_id = $googleUser->getId();
                 $current->google_access_token = $googleUser->token;
-                // Always update refresh token if provided (Google only provides it on first consent)
+                
                 if ($googleUser->refreshToken) {
                     $current->google_refresh_token = $googleUser->refreshToken;
                 }
                 $current->google_token_expires_at = $expiresAt;
                 $current->google_email = $googleUser->getEmail() ?: $current->google_email;
                 $current->save();
+                
                 return redirect()->route('profile.index')->with('success', 'Akun Google berhasil ditautkan.');
             }
 
-            // Jika tidak login, flow: Login atau Register
-            // 1. Cari berdasarkan Google ID (Match paling kuat)
+            // KASUS 2: User Belum Login (Login via Google)
+            // 1. Coba cari user berdasarkan Google ID mereka (paling akurat)
             $user = User::where('google_id', $googleUser->getId())->first();
 
-            // 2. Jika tidak ketemu, cari berdasarkan Email
+            // 2. Jika tidak ketemu ID, cari berdasarkan Email (antisipasi user lama atau hasil invite admin)
             if (!$user) {
                 $user = User::where('email', $googleUser->getEmail())->first();
                 
                 if ($user) {
-                    // Ketemu by Email, berarti ini User lama yang belum link Google
-                    // Update Google ID mereka
+                    // Ketemu via Email -> Artinya user sudah didaftarkan admin/diinvite sebelumnya.
+                    // Hubungkan akun ini dengan Google ID sekarang agar login berikutnya lebih cepat.
                     $user->google_id = $googleUser->getId();
-                    // Lanjut update token di bawah...
                 } else {
-                    // 3. Tidak ketemu ID maupun Email -> Register User Baru
+                    // 3. Tidak ketemu ID maupun Email -> Register Otomatis User Baru
+                    // (Berguna jika sistem diizinkan mendaftar mandiri, meski saat ini umumnya invite-only)
                     $user = new User();
                     $user->email = $googleUser->getEmail();
                     $user->google_id = $googleUser->getId();
                 }
             }
             
-            // Common User Update (Sync Profile & Tokens)
+            // Update data user (Profile & Tokens)
             if (empty($user->name)) {
                 $user->name = $googleUser->getName() ?: $user->name;
             }
             $user->avatar = $googleUser->getAvatar() ?: $user->avatar;
             $user->google_access_token = $googleUser->token;
-            // Always update refresh token if provided
+            
             if ($googleUser->refreshToken) {
                 $user->google_refresh_token = $googleUser->refreshToken;
             }
             $user->google_token_expires_at = $expiresAt;
             $user->google_email = $googleUser->getEmail() ?: $user->google_email;
             
+            // Set password random jika user baru tidak punya password (karena login via Google terus)
             if (empty($user->password)) {
                 $user->password = Hash::make(Str::random(40));
             }
             
             $user->save();
 
+            // Login user ke sesi Laravel
             Auth::login($user, true);
 
+            // Cek apakah data profil user sudah lengkap (NIP, Jenis Guru, Sekolah)
+            // Ini penting untuk user baru agar data mereka valid sebelum menggunakan sistem.
             $hasTeacher = $user->schools()->wherePivot('role', 'teacher')->exists();
             $hasSupervisor = $user->schools()->wherePivot('role', 'supervisor')->exists();
+            
+            // Aturan: Jika dia Guru (walaupun juga Supervisor), dia wajib melengkapi data guru
             $requiresTeacherMeta = !$hasSupervisor || $hasTeacher;
             $resolvedTeacherType = $user->resolved_teacher_type;
+            
+            // Cek apakah data guru lengkap (Subject/Class)
             $missingTeacherMeta = $requiresTeacherMeta && (
                 empty($resolvedTeacherType) ||
                 ($resolvedTeacherType === 'subject' && empty($user->subject)) ||

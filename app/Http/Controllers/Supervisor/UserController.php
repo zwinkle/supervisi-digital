@@ -9,9 +9,14 @@ use Illuminate\Support\Str;
 
 class UserController extends Controller
 {
+    /**
+     * Menampilkan daftar guru yang berada di bawah supervisi supervisor ini.
+     * Filter berdasarkan nama/NIP dan pagination.
+     */
     public function index(Request $request)
     {
         $user = $request->user();
+        // Ambil daftar ID sekolah yang dikelola
         $schoolIds = $user->schools()->wherePivot('role','supervisor')->pluck('schools.id');
 
         $q = trim((string) $request->input('q', ''));
@@ -22,8 +27,10 @@ class UserController extends Controller
         }
 
         if ($schoolIds->isEmpty()) {
+            // Jika tidak mengelola sekolah sama sekali, kembalikan list kosong
             $teachers = new \Illuminate\Pagination\LengthAwarePaginator([], 0, $perPage);
         } else {
+            // Query user yang memiliki role 'teacher' pada sekolah-sekolah tersebut
             $teachersQuery = User::query()
                 ->with(['schools' => function ($relation) {
                     $relation->where('school_user.role', 'teacher')->orderBy('name');
@@ -33,6 +40,7 @@ class UserController extends Controller
                         ->where('school_user.role', 'teacher');
                 });
 
+            // Logika pencarian: Nama, Email, NIP, atau Nama Sekolah
             if ($search) {
                 $teachersQuery->where(function ($query) use ($search, $schoolIds) {
                     $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])

@@ -12,6 +12,12 @@ class GoogleDriveService
     protected GoogleClient $client;
     protected GoogleDrive $drive;
 
+    /**
+     * Constructor.
+     * Menginisialisasi Google Client dengan config dan token.
+     * Menangani renewal token jika refresh token tersedia.
+     */
+
     public function __construct(string $accessToken, ?string $refreshToken = null)
     {
         $this->client = new GoogleClient();
@@ -49,7 +55,8 @@ class GoogleDriveService
     }
 
     /**
-     * Normalise persisted token formats (raw access token string, JSON, or array) into the format Google client expects.
+     * Normalisasi format access token (string raw, JSON string, atau array).
+     * Memastikan format sesuai standar Google Client library.
      */
     protected function normaliseAccessToken($accessToken)
     {
@@ -78,7 +85,8 @@ class GoogleDriveService
     }
 
     /**
-     * Apply access token to the underlying Google client with graceful fallback for format issues.
+     * Menerapkan access token ke Google Client.
+     * Menangani fallback jika format token tidak valid.
      */
     protected function applyAccessToken($token): void
     {
@@ -124,7 +132,7 @@ class GoogleDriveService
     }
 
     /**
-     * Check if current token is valid (not expired)
+     * Mengecek validitas token saat init.
      */
     public function isTokenValid(): bool
     {
@@ -132,7 +140,8 @@ class GoogleDriveService
     }
 
     /**
-     * Get refreshed access token if available, returns null if refresh fails
+     * Mencoba refresh token jika expired.
+     * Mengembalikan array token baru jika berhasil, atau null jika gagal.
      */
     public function getRefreshedToken(): ?array
     {
@@ -159,6 +168,11 @@ class GoogleDriveService
         }
     }
 
+    /**
+     * Memastikan folder root "SUPERVISI DIGITAL" ada di Google Drive user.
+     * Jika belum ada, akan dibuatkan.
+     * @return string ID Folder Google Drive
+     */
     public function ensureRootFolder(): string
     {
         // Ensure folder named "SUPERVISI DIGITAL" exists in user's root; return folderId
@@ -179,6 +193,9 @@ class GoogleDriveService
         return $created->id;
     }
 
+    /**
+     * Membuat folder tanggal (format DD-MM-YYYY) di dalam root folder.
+     */
     public function ensureDateFolder(string $rootFolderId, string $dateDdMmYyyy): string
     {
         $q = sprintf("name='%s' and mimeType='application/vnd.google-apps.folder' and '%s' in parents and trashed=false", addslashes($dateDdMmYyyy), $rootFolderId);
@@ -195,6 +212,9 @@ class GoogleDriveService
         return $created->id;
     }
 
+    /**
+     * Membuat sub-folder generik (misal nama guru) di dalam parent folder.
+     */
     public function ensureChildFolder(string $parentFolderId, string $name): string
     {
         $q = sprintf("name='%s' and mimeType='application/vnd.google-apps.folder' and '%s' in parents and trashed=false", addslashes($name), $parentFolderId);
@@ -211,6 +231,10 @@ class GoogleDriveService
         return $created->id;
     }
 
+    /**
+     * Mengupload file ke folder Google Drive tertentu.
+     * Mengembalikan metadata file termasuk link preview.
+     */
     public function uploadFile(string $folderId, string $name, string $mimeType, string $contents): array
     {
         $file = new DriveFile([
@@ -236,6 +260,9 @@ class GoogleDriveService
         ];
     }
 
+    /**
+     * Membagikan file/folder ke email tertentu (misal ke admin).
+     */
     public function shareWith(string $fileOrFolderId, string $email, string $role = 'reader'): void
     {
         $permission = new \Google\Service\Drive\Permission([

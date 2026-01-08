@@ -10,33 +10,37 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /**
+     * Menampilkan dashboard utama Supervisor.
+     * Halaman ini menyajikan statistik supervisi (jadwal akan datang, selesai, tertunda) dan aktivitas guru.
+     */
     public function index(Request $request)
     {
         $user = Auth::user();
         
-        // Get upcoming schedules (future dates, not conducted yet)
+        // Jadwal Mendatang: Supervisi yang belum dilaksanakan (tanggal >= hari ini)
         $upcomingSchedules = Schedule::where('supervisor_id', $user->id)
             ->where('date', '>=', now())
             ->whereNull('conducted_at')
             ->count();
             
-        // Get completed schedules (conducted)
+        // Jadwal Selesai: Supervisi yang sudah terlaksana dan diberi nilai
         $completedSchedules = Schedule::where('supervisor_id', $user->id)
             ->whereNotNull('conducted_at')
             ->count();
             
-        // Get pending schedules (past dates, not conducted)
+        // Jadwal Tertunda: Tanggal sudah lewat tapi belum ditandai selesai
         $pendingSchedules = Schedule::where('supervisor_id', $user->id)
             ->where('date', '<', now())
             ->whereNull('conducted_at')
             ->count();
             
-        // Get teachers supervised by this supervisor
+        // Total Guru: Jumlah unik guru yang dijadwalkan di bawah supervisor ini
         $teachersSupervised = User::whereHas('teachingSchedules', function ($query) use ($user) {
             $query->where('supervisor_id', $user->id);
         })->count();
         
-        // Get recent schedules for display
+        // Ambil 3 jadwal supervisi terbaru yang telah dibuat
         $recentSchedules = Schedule::where('supervisor_id', $user->id)
             ->with(['teacher', 'school'])
             ->orderBy('date', 'desc')
@@ -47,12 +51,13 @@ class DashboardController extends Controller
                     'title' => $schedule->title,
                     'teacher' => $schedule->teacher->name,
                     'date' => $schedule->date->format('d M'),
+                    // Status Badge dinamis dari model Helper
                     'status' => $schedule->computedBadge()['text'],
                     'status_class' => $schedule->computedBadge()['class']
                 ];
             });
         
-        // Calculate trend indicators based on actual data with timestamp
+        // Kalkulasi Tren (Trend) untuk indikator performa mingguan/bulanan
         $upcomingThisWeek = Schedule::where('supervisor_id', $user->id)
             ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
             ->whereNull('conducted_at')

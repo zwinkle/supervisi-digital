@@ -9,6 +9,10 @@ class File extends Model
 {
     use HasFactory;
 
+    /**
+     * Atribut yang dapat diisi massal.
+     * Menyimpan metadata file dari Google Drive.
+     */
     protected $fillable = [
         'owner_user_id',
         'schedule_id',
@@ -17,7 +21,7 @@ class File extends Model
         'mime',
         'web_view_link',
         'web_content_link',
-        'folder_id',
+        'folder_id', // ID folder di Google Drive
         'extra',
     ];
 
@@ -25,11 +29,17 @@ class File extends Model
         'extra' => 'array',
     ];
 
+    /**
+     * Pemilik file (User yang upload).
+     */
     public function owner()
     {
         return $this->belongsTo(User::class, 'owner_user_id');
     }
 
+    /**
+     * Jadwal terkait file ini (jika ada).
+     */
     public function schedule()
     {
         return $this->belongsTo(Schedule::class);

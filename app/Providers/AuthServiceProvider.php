@@ -11,6 +11,7 @@ class AuthServiceProvider extends ServiceProvider
 {
     /**
      * Register any authentication / authorization services.
+     * Mendaftarkan Policy untuk model Schedule.
      */
     public function boot(): void
     {

@@ -21,7 +21,6 @@
 /storage/*.key
 /storage/pail
 /vendor
-/docs/dual-evaluation-method.md
 /docs/rubrik.md
 Homestead.json
 Homestead.yaml

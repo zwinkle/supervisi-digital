@@ -20,6 +20,8 @@ class Submission extends Model
         'submitted_at' => 'datetime',
     ];
 
+    // --- Relationships ---
+
     public function schedule()
     {
         return $this->belongsTo(Schedule::class);
@@ -30,16 +32,28 @@ class Submission extends Model
         return $this->belongsTo(User::class, 'teacher_id');
     }
 
+    /**
+     * Dokumen pendukung (RPP, Asesmen, Administrasi).
+     */
     public function documents()
     {
         return $this->hasMany(SubmissionDocument::class);
     }
 
+    /**
+     * File video bukti pembelajaran.
+     */
     public function videoFile()
     {
         return $this->belongsTo(File::class, 'video_file_id');
     }
 
+    // --- Helper Methods ---
+
+    /**
+     * Ambil dokumen berdasarkan kategori (rpp, asesmen, dsb).
+     * Mengecek relation loaded untuk optimalisasi query.
+     */
     public function documentsFor(string $category)
     {
         if ($this->relationLoaded('documents')) {
@@ -49,6 +63,9 @@ class Submission extends Model
         return $this->documents()->where('category', $category)->get();
     }
 
+    /**
+     * Cek apakah kategori dokumen tertentu sudah ada isinya.
+     */
     public function hasDocumentsFor(string $category): bool
     {
         if ($this->relationLoaded('documents')) {

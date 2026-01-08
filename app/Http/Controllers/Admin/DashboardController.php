@@ -12,27 +12,31 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
+    /**
+     * Menampilkan dashboard utama Administrator.
+     * Mengumpulkan statistik global (sekolah, user, guru) dan notifikasi penting seperti undangan kedaluwarsa.
+     */
     public function index(Request $request)
     {
-        // Get statistics for admin dashboard
+        // Statistik umum
         $totalUsers = User::count();
         $totalSchools = School::count();
         
-        // Get active teachers (users with teacher role in schools)
+        // Hitung total guru yang aktif (sudah terdaftar di minimal satu sekolah)
         $activeTeachers = User::whereHas('schools', function ($query) {
             $query->where('school_user.role', 'teacher');
         })->count();
         
-        // Get pending invitations (not used and not expired)
+        // Cek jumlah undangan yang masih "sangkut" (belum dipakai tapi belum kedaluwarsa)
         $pendingInvitations = Invitation::whereNull('used_at')
             ->where('expires_at', '>', now())
             ->count();
             
-        // Get recent activity logs from the database
-        // For now, we'll simulate some activities based on actual data
+        // Simulasi Log Aktivitas Terbaru (untuk keperluan demo UI)
+        // Idealnya nanti diambil dari tabel 'activity_logs' jika sudah diimplementasikan.
         $recentActivities = [];
         
-        // Add user registration activity
+        // Cek jika ada user baru bergabung
         $latestUser = User::orderBy('created_at', 'desc')->first();
         if ($latestUser && $latestUser->name !== 'Administrator') {
             $recentActivities[] = [
@@ -43,7 +47,7 @@ class DashboardController extends Controller
             ];
         }
         
-        // Add school creation activity
+        // Cek sekolah terbaru
         $latestSchool = School::orderBy('created_at', 'desc')->first();
         if ($latestSchool) {
             $recentActivities[] = [
@@ -54,7 +58,7 @@ class DashboardController extends Controller
             ];
         }
         
-        // Add invitation activity
+        // Cek undangan terbaru
         $latestInvitation = Invitation::orderBy('created_at', 'desc')->first();
         if ($latestInvitation) {
             $recentActivities[] = [
@@ -65,9 +69,9 @@ class DashboardController extends Controller
             ];
         }
         
-        // If we don't have enough activities, add some placeholders
+        // Placeholder / Data Dummy jika aktivitas masih sepi (agar tampilan tidak kosong melompong)
         if (count($recentActivities) < 3) {
-            // Add a placeholder for user registration
+            // Placeholder user
             $recentActivities[] = [
                 'title' => 'Pengguna Baru',
                 'description' => 'Budi Santoso terdaftar sebagai guru',
@@ -75,7 +79,7 @@ class DashboardController extends Controller
                 'icon' => 'user-plus'
             ];
             
-            // Add a placeholder for schedule creation
+            // Placeholder jadwal
             $recentActivities[] = [
                 'title' => 'Jadwal Dibuat',
                 'description' => '5 sesi supervisi baru dijadwalkan',
@@ -83,7 +87,7 @@ class DashboardController extends Controller
                 'icon' => 'calendar'
             ];
             
-            // Add a placeholder for invitation
+            // Placeholder undangan
             $recentActivities[] = [
                 'title' => 'Undangan Dikirim',
                 'description' => '3 undangan guru dikirim',
@@ -92,10 +96,10 @@ class DashboardController extends Controller
             ];
         }
         
-        // Take only the first 3 activities
+        // Batasi hanya 3 aktivitas
         $recentActivities = array_slice($recentActivities, 0, 3);
         
-        // Calculate trend indicators based on actual data with timestamp
+        // Kalkulasi Tren Bulanan (Bulan ini) untuk ditampilkan sebagai indikator kinerja
         $usersThisMonth = User::whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();

@@ -15,24 +15,33 @@ use Illuminate\Support\Facades\Mail;
 
 class InvitationController extends Controller
 {
+    /**
+     * Menampilkan daftar undangan khusus untuk sekolah supervised.
+     * Hanya menampilkan undangan guru karena supervisor hanya mengelola guru.
+     */
     public function index(Request $request)
     {
         $user = $request->user();
         $q = $request->input('q');
         $status = $request->input('status', 'all');
 
+        // Ambil daftar ID sekolah yang dikelola supervisor
         $schoolIds = $user->schools()->wherePivot('role','supervisor')->pluck('schools.id');
+        
+        // Filter: Hanya undangan guru ('role' = 'teacher') dan sekolahnya cocok
         $query = Invitation::where('role','teacher')
             ->whereJsonLength('school_ids', '>=', 1)
             ->where(function($q) use ($schoolIds){
+                // Cek apakah school_id pertama di JSON array ada di list sekolah supervisor
                 $q->whereIn('school_ids->0', $schoolIds);
             });
 
-        // Only apply filters when there's a search query
+        // Terapkan filter pencarian email
         if ($q && trim($q) !== '') {
             $query->where('email', 'LIKE', '%' . $q . '%');
         }
 
+        // Terapkan filter status (active, used, expired)
         if ($status === 'active') {
             $query->whereNull('used_at')
                   ->where(function ($query) {
@@ -63,6 +72,10 @@ class InvitationController extends Controller
         return view('supervisor.invitations.index', compact('invitations'));
     }
 
+    /**
+     * Menampilkan form pembuatan undangan guru baru.
+     * Dropdown sekolah otomatis difilter hanya untuk sekolah yang Anda kelola.
+     */
     public function create(Request $request)
     {
         $user = $request->user();
@@ -73,10 +86,15 @@ class InvitationController extends Controller
         return view('supervisor.invitations.create', compact('schools','teacherTypes','subjects','classes'));
     }
 
+    /**
+     * Menyimpan undangan guru.
+     * Memastikan sekolah yang dipilih valid (hak akses supervisor) dan data guru sesuai.
+     */
     public function store(Request $request)
     {
         $user = $request->user();
         $schoolIds = $user->schools()->wherePivot('role','supervisor')->pluck('schools.id')->toArray();
+        
         $data = $request->validate([
             'email' => ['required','email','max:255'],
             'name' => ['required','string','max:255'],
@@ -86,6 +104,8 @@ class InvitationController extends Controller
             'teacher_subject' => ['nullable','string','max:255'],
             'teacher_class' => ['nullable','string','max:50'],
         ]);
+        
+        // Authorization Check: Pastikan sekolah milik supervisor
         if (!in_array($data['school_id'], $schoolIds)) {
             return back()->withErrors(['school_id' => 'Sekolah tidak berada dalam pengelolaan Anda.'])->withInput();
         }
@@ -123,7 +143,7 @@ class InvitationController extends Controller
             'teacher_class' => $teacherClass ?? null,
         ]);
 
-        // generate signed url (not sent via email)
+        // Generate signed url (untuk referensi jika perlu, meski tidak dikirim email)
         $signedUrl = URL::temporarySignedRoute('invites.accept.show', $expiresAt, ['token' => $token]);
 
         return redirect()->route('supervisor.invitations.index')
@@ -131,6 +151,10 @@ class InvitationController extends Controller
             ->with('info', 'Link undangan tersedia pada daftar undangan.');
     }
 
+    /**
+     * Memperbarui masa aktif undangan guru.
+     * Berguna jika guru penerima lupa atau telat mendaftar sebelum link kedaluwarsa.
+     */
     public function resend(Invitation $invitation)
     {
         if ($invitation->role !== 'teacher') {
@@ -148,6 +172,9 @@ class InvitationController extends Controller
         return back()->with('success', 'Kedaluwarsa undangan diperbarui.');
     }
 
+    /**
+     * Mencabut undangan guru yang belum dipakai.
+     */
     public function revoke(Invitation $invitation)
     {
         if ($invitation->role !== 'teacher') {

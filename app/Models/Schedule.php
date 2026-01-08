@@ -12,15 +12,32 @@ class Schedule extends Model
     use HasFactory;
 
     protected $fillable = [
-        'school_id', 'supervisor_id', 'teacher_id', 'date', 'title', 'description', 'class_name', 'remarks', 'evaluated_at', 'uploaded_evaluation_file', 'evaluation_method', 'manual_rpp_score', 'manual_pembelajaran_score', 'manual_asesmen_score'
+        'school_id',
+        'supervisor_id',
+        'teacher_id',
+        'date',
+        'title',
+        'description',
+        'class_name',
+        'remarks',
+        'evaluated_at', // Waktu penilaian selesai
+        'uploaded_evaluation_file',
+        'evaluation_method', // Metode: 'manual' (web) atau 'upload' (file)
+        'manual_rpp_score',
+        'manual_pembelajaran_score',
+        'manual_asesmen_score'
     ];
 
     protected $casts = [
         'date' => 'date',
         'evaluated_at' => 'datetime',
-        'conducted_at' => 'datetime',
+        'conducted_at' => 'datetime', // Waktu supervisi dilaksanakan
     ];
 
+    /**
+     * Boot model.
+     * Generate UUID.
+     */
     protected static function booted(): void
     {
         static::creating(function (self $schedule) {
@@ -34,6 +51,8 @@ class Schedule extends Model
     {
         return 'uuid';
     }
+
+    // --- Relationships ---
 
     public function school()
     {
@@ -65,38 +84,56 @@ class Schedule extends Model
         return $this->hasMany(Evaluation::class);
     }
 
+    // --- Helper Methods ---
+
+    /**
+     * Mengecek apakah jadwal sudah selesai dinilai (Evaluated).
+     */
     public function isCompleted(): bool
     {
         return !is_null($this->evaluated_at);
     }
 
+    /**
+     * Menghitung sisa hari menuju jadwal supervisi.
+     * Returns: int (hari) atau null jika tidak ada tanggal.
+     */
     public function daysUntil(): ?int
     {
         if (!$this->date) return null;
         return Carbon::today()->diffInDays($this->date, false);
     }
 
+    /**
+     * Menghitung badge status untuk tampilan UI.
+     * Mengembalikan array berisi teks dan kelas warna CSS Tailwind.
+     */
     public function computedBadge(): array
     {
-        // If session has been conducted, it's considered Selesai
+        // Jika sudah dilaksanakan
         if ($this->conducted_at) {
             return ['text' => 'Selesai', 'class' => 'bg-green-100 text-green-800'];
         }
-        // Today
+        // Hari ini
         if ($this->date && $this->date->isToday()) {
             return ['text' => 'Hari ini', 'class' => 'bg-blue-100 text-blue-800'];
         }
+        // Mendatang
         $du = $this->daysUntil();
         if ($du !== null && $du >= 1) {
             return ['text' => 'Dalam '.$du.' hari', 'class' => 'bg-amber-100 text-amber-800'];
         }
-        // Past date and not conducted -> overdue
+        // Terlewat (Past date and not conducted)
         if ($this->date && $this->date->isPast()) {
             return ['text' => 'Terlewat', 'class' => 'bg-red-100 text-red-800'];
         }
+        // Default
         return ['text' => 'Terjadwal', 'class' => 'bg-gray-100 text-gray-800'];
     }
 
+    /**
+     * Cek kesiapan: Apakah semua jenis evaluasi (RPP, Pembelajaran, Asesmen) ada?
+     */
     public function hasAllEvaluations(): bool
     {
         $types = $this->evaluations()->pluck('type')->unique()->all();
@@ -105,6 +142,9 @@ class Schedule extends Model
             && in_array('asesmen', $types, true);
     }
 
+    /**
+     * Cek kesiapan: Apakah semua dokumen submission wajib sudah diupload guru?
+     */
     public function hasSubmissionFiles(): bool
     {
         $submission = $this->submission;
@@ -118,6 +158,9 @@ class Schedule extends Model
             && (bool) optional($submission->videoFile)->id;
     }
 
+    /**
+     * Cek ketersediaan submission spesifik (helper untuk view).
+     */
     public function hasSubmissionFor(string $type): bool
     {
         $submission = $this->submission;
@@ -134,6 +177,10 @@ class Schedule extends Model
         };
     }
 
+    /**
+     * Otomatis tandai 'evaluated_at' selesai jika semua syarat terpenuhi.
+     * Dipanggil setelah update penilaian atau upload dokumen.
+     */
     public function checkAndMarkCompleted(): void
     {
         if ($this->isCompleted()) return;

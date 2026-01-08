@@ -15,6 +15,10 @@ use App\Mail\InviteMail;
 
 class InvitationController extends Controller
 {
+    /**
+     * Menampilkan daftar undangan (aktif, terpakai, atau kedaluwarsa).
+     * Mendukung filter status dan pencarian berdasarkan email.
+     */
     public function index(Request $request)
     {
         $q = $request->input('q');
@@ -22,11 +26,12 @@ class InvitationController extends Controller
 
         $query = Invitation::query();
 
-        // Only apply filters when there's a search query
+        // Terapkan filter hanya jika ada pencarian
         if ($q && trim($q) !== '') {
             $query->where('email', 'LIKE', '%' . $q . '%');
         }
 
+        // Filter berdasarkan status
         if ($status === 'active') {
             $query->whereNull('used_at')
                   ->where(function ($query) {
@@ -56,6 +61,11 @@ class InvitationController extends Controller
 
         return view('admin.invitations.index', compact('invitations'));
     }
+
+    /**
+     * Menampilkan form pembuatan undangan baru.
+     * Admin dapat membuat undangan khusus untuk Supervisor atau Guru sekolah tertentu.
+     */
     public function create()
     {
         $schools = School::orderBy('name')->get();
@@ -65,6 +75,10 @@ class InvitationController extends Controller
         return view('admin.invitations.create', compact('schools', 'teacherTypes', 'subjects', 'classes'));
     }
 
+    /**
+     * Menyimpan data undangan baru.
+     * Sistem akan men-generate token unik, menetapkan peran, sekolah, dan spesialisasi guru (jika ada).
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -83,6 +97,8 @@ class InvitationController extends Controller
         $teacherType = null;
         $teacherSubject = null;
         $teacherClass = null;
+
+        // Validasi kondisional: Pastikan data sekolah dan peran sesuai
         if ($data['role'] === 'supervisor') {
             $sid = $data['supervisor_school_id'] ?? null;
             if (empty($sid)) {
@@ -95,6 +111,7 @@ class InvitationController extends Controller
             }
             $schools = [(int)$data['teacher_school_id']];
 
+            // Validasi kelengkapan data guru: Pastikan memilih Mapel atau Kelas yang valid
             $teacherType = $data['teacher_type'] ?? null;
             if (!$teacherType) {
                 return back()->withErrors(['teacher_type' => 'Pilih jenis guru.'])->withInput();
@@ -135,17 +152,21 @@ class InvitationController extends Controller
 
         $signedUrl = URL::temporarySignedRoute('invites.accept.show', $expiresAt, ['token' => $token]);
 
-        // Tidak mengirim email: tampilkan link undangan bertanda tangan (signed URL)
+        // Tidak mengirim email otomatis. Admin dapat membagikan link manual.
         return redirect()->route('admin.users.index')
             ->with('success', 'Undangan berhasil dibuat untuk '.$data['email']);
     }
 
+    /**
+     * Memperbarui masa aktif undangan (Resend/Extend).
+     * Berguna jika undangan kedaluwarsa sebelum sempat digunakan.
+     */
     public function resend(Invitation $invitation)
     {
         if ($invitation->used_at) {
             return back()->with('warning', 'Undangan sudah digunakan, tidak dapat dikirim ulang.');
         }
-        // extend or keep expiry
+        // Perpanjang masa aktif 7 hari dari sekarang
         $expiresAt = $invitation->expires_at ?? \Carbon\Carbon::now()->addDays(7);
         if (now()->greaterThan($expiresAt)) {
             $expiresAt = now()->addDays(7);
@@ -153,10 +174,13 @@ class InvitationController extends Controller
         $invitation->expires_at = $expiresAt;
         $invitation->save();
 
-        // Tidak mengirim email. Link dapat dilihat/di-copy dari halaman daftar undangan.
         return back()->with('success', 'Kedaluwarsa undangan diperbarui untuk '.$invitation->email);
     }
 
+    /**
+     * Mencabut (menghapus) undangan yang belum digunakan.
+     * Undangan yang sudah dipakai login tidak dapat dicabut untuk menjaga integritas data user.
+     */
     public function revoke(Invitation $invitation)
     {
         if ($invitation->used_at) {

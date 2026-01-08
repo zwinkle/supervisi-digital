@@ -9,7 +9,9 @@ class SubmissionDocument extends Model
 {
     use HasFactory;
 
+    // Kategori dokumen yang diizinkan
     public const ALLOWED_CATEGORIES = ['rpp', 'asesmen', 'administrasi'];
+    // Batas maksimal file per kategori
     public const MAX_PER_CATEGORY = 6;
 
     protected $fillable = [
@@ -18,16 +20,25 @@ class SubmissionDocument extends Model
         'category',
     ];
 
+    /**
+     * Parent submission.
+     */
     public function submission()
     {
         return $this->belongsTo(Submission::class);
     }
 
+    /**
+     * File fisik/metadata di database.
+     */
     public function file()
     {
         return $this->belongsTo(File::class);
     }
 
+    /**
+     * Accessor: Label kategori yang diformat.
+     */
     public function getCategoryLabelAttribute(): string
     {
         return match ($this->category) {

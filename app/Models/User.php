@@ -15,7 +15,8 @@ class User extends Authenticatable
     use HasFactory, Notifiable, HasRoles;
 
     /**
-     * The attributes that are mass assignable.
+     * Atribut yang dapat diisi secara massal.
+     * Termasuk data diri, kredensial, dan token Google OAuth.
      *
      * @var list<string>
      */
@@ -24,10 +25,10 @@ class User extends Authenticatable
         'email',
         'password',
         'nip',
-        'teacher_type',
-        'subject',
-        'class_name',
-        'avatar',
+        'teacher_type', // Jenis guru (subject/class)
+        'subject',      // Mata pelajaran (jika subject teacher)
+        'class_name',   // Nama kelas (jika class teacher)
+        'avatar',       // URL foto profil
         'google_id',
         'google_access_token',
         'google_refresh_token',
@@ -35,7 +36,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
+     * Atribut yang harus disembunyikan saat serialisasi (JSON).
      *
      * @var list<string>
      */
@@ -47,7 +48,7 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * Konversi tipe data atribut.
      *
      * @return array<string, string>
      */
@@ -61,6 +62,10 @@ class User extends Authenticatable
         ];
     }
 
+    /**
+     * Boot model.
+     * Otomatis mengisi UUID saat pembuatan user baru.
+     */
     protected static function booted(): void
     {
         static::creating(function (self $user) {
@@ -70,11 +75,18 @@ class User extends Authenticatable
         });
     }
 
+    /**
+     * Menggunakan kolom UUID untuk route binding (bukan ID auto-increment).
+     */
     public function getRouteKeyName(): string
     {
         return 'uuid';
     }
 
+    /**
+     * Accessor: Label jenis guru yang mudah dibaca.
+     * Contoh: 'Guru Mata Pelajaran' atau 'Guru Kelas'.
+     */
     public function getTeacherTypeLabelAttribute(): ?string
     {
         $type = $this->resolveTeacherType();
@@ -86,6 +98,10 @@ class User extends Authenticatable
         };
     }
 
+    /**
+     * Accessor: Detail penugasan guru.
+     * Mengembalikan nama mata pelajaran atau nama kelas.
+     */
     public function getTeacherDetailLabelAttribute(): ?string
     {
         $type = $this->resolveTeacherType();
@@ -96,6 +112,8 @@ class User extends Authenticatable
             default => null,
         };
     }
+
+    // --- Helper Methods untuk Resolusi Tipe Guru ---
 
     public function getResolvedTeacherTypeAttribute(): ?string
     {
@@ -112,6 +130,10 @@ class User extends Authenticatable
         return $this->resolveTeacherType() === 'class' ? $this->class_name : null;
     }
 
+    /**
+     * Menentukan tipe guru berdasarkan data yang tersedia.
+     * Prioritas: field teacher_type -> subject -> class_name.
+     */
     protected function resolveTeacherType(): ?string
     {
         if (!is_null($this->teacher_type)) {
@@ -129,17 +151,28 @@ class User extends Authenticatable
         return null;
     }
 
-    // Relationships
+    // --- Relationships ---
+
+    /**
+     * Relasi ke model School.
+     * User bisa memiliki peran (teacher/supervisor) di banyak sekolah (Many-to-Many).
+     */
     public function schools()
     {
         return $this->belongsToMany(School::class)->withPivot('role')->withTimestamps();
     }
 
+    /**
+     * Relasi jadwal di mana user bertindak sebagai Supervisor.
+     */
     public function supervisedSchedules()
     {
         return $this->hasMany(Schedule::class, 'supervisor_id');
     }
 
+    /**
+     * Relasi jadwal di mana user bertindak sebagai Guru yang disupervisi.
+     */
     public function teachingSchedules()
     {
         return $this->hasMany(Schedule::class, 'teacher_id');

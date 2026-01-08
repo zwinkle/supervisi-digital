@@ -4,6 +4,9 @@ namespace App\Support;
 
 class TeacherOptions
 {
+    /**
+     * Daftar jenis guru yang tersedia.
+     */
     public static function teacherTypes(): array
     {
         return [
@@ -12,6 +15,9 @@ class TeacherOptions
         ];
     }
 
+    /**
+     * Daftar mata pelajaran (kurikulum merdeka sd).
+     */
     public static function subjects(): array
     {
         return [
@@ -30,6 +36,9 @@ class TeacherOptions
         ];
     }
 
+    /**
+     * Daftar kelas SD (1-6).
+     */
     public static function classes(): array
     {
         return ['1', '2', '3', '4', '5', '6'];

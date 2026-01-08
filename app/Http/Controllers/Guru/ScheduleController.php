@@ -10,6 +10,10 @@ use Dompdf\Options;
 
 class ScheduleController extends Controller
 {
+    /**
+     * Menampilkan daftar jadwal supervisi yang terkait dengan guru.
+     * Fitur: Filter berdasarkan Bulan & Tahun, serta halaman (pagination).
+     */
     public function index(Request $request)
     {
         $user = $request->user();
@@ -42,16 +46,21 @@ class ScheduleController extends Controller
         return view('schedules.teacher', compact('schedules'));
     }
 
+    /**
+     * Mengunduh rapor/hasil evaluasi supervisi dalam format PDF.
+     */
     public function export(Request $request, Schedule $schedule)
     {
         $user = $request->user();
         if ($schedule->teacher_id !== $user->id) abort(403);
-        // Generate PDF using Dompdf directly
+        
+        // Load data lengkap untuk PDF
         $schedule->load(['school','supervisor','teacher','evaluations']);
         try {
             $html = view('exports.schedule_evaluation', [
                 'schedule' => $schedule,
             ])->render();
+            
             $options = new Options();
             $options->set('isHtml5ParserEnabled', true);
             $options->set('isRemoteEnabled', false);
@@ -60,6 +69,7 @@ class ScheduleController extends Controller
             $dompdf->loadHtml($html, 'UTF-8');
             $dompdf->setPaper('A4', 'portrait');
             $dompdf->render();
+            
             $filename = 'penilaian_guru_schedule_'.$schedule->id.'.pdf';
             return response($dompdf->output(), 200, [
                 'Content-Type' => 'application/pdf',
@@ -71,6 +81,9 @@ class ScheduleController extends Controller
         }
     }
 
+    /**
+     * Mengunduh lampiran file hasil evaluasi (jika supervisi dilakukan dengan metode upload manual).
+     */
     public function downloadEvaluation(Request $request, Schedule $schedule)
     {
         $user = $request->user();

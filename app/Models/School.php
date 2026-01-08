@@ -14,6 +14,10 @@ class School extends Model
         'name', 'address', 'created_by'
     ];
 
+    /**
+     * Boot model.
+     * Generate UUID saat pembuatan sekolah.
+     */
     protected static function booted(): void
     {
         static::creating(function (self $school) {
@@ -28,11 +32,18 @@ class School extends Model
         return 'uuid';
     }
 
+    /**
+     * Relasi ke User (Guru/Supervisor).
+     * Many-to-Many dengan pivot table 'school_user' yang menyimpan role.
+     */
     public function users()
     {
         return $this->belongsToMany(User::class)->withPivot('role')->withTimestamps();
     }
 
+    /**
+     * Relasi ke Jadwal Supervisi yang terkait dengan sekolah ini.
+     */
     public function schedules()
     {
         return $this->hasMany(Schedule::class);

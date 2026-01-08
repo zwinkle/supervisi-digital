@@ -18,25 +18,40 @@ class EvaluationController extends Controller
         'asesmen' => 'Guru belum mengunggah file asesmen.',
     ];
 
+    /**
+     * Menampilkan form penilaian (Evaluasi).
+     *
+     * @param Request $request
+     * @param Schedule $schedule  Jadwal yang akan dinilai.
+     * @param string $type        Jenis penilaian ('rpp', 'pembelajaran', atau 'asesmen').
+     */
     public function show(Request $request, Schedule $schedule, $type)
     {
         $user = Auth::user();
+        
+        // Validasi: Pastikan tipe penilaian valid dan user adalah supervisor yang berhak
         if (!in_array($type, $this->types, true)) abort(404);
-        // Supervisor must own the schedule
         if ($schedule->supervisor_id !== $user->id) abort(403);
 
+        // Muat data submisi guru (dokumen/video) untuk memastikan kelengkapan sebelum menilai
         $schedule->loadMissing(['submission.documents.file','submission.videoFile']);
+        
+        // Jika dokumen belum tersedia, jangan izinkan penilaian dan berikan pesan error
         if (!$schedule->hasSubmissionFor($type)) {
             return redirect()->route('supervisor.schedules.assessment', $schedule)
                 ->with('error', $this->requirementMessages[$type] ?? 'Berkas pendukung belum tersedia.');
         }
 
+        // Ambil struktur instrumen penilaian (pertanyaan & format) yang sesuai dengan tipe
         list($structure, $kind) = self::structureFor($type);
+        
+        // Cek apakah sudah ada penilaian sebelumnya (Mode Edit)
         $existing = Evaluation::where('schedule_id', $schedule->id)
             ->where('teacher_id', $schedule->teacher_id)
             ->where('type', $type)
             ->first();
 
+        // Kirim data ke view: jadwal, tipe, format input (skor/ya-tidak), struktur soal, dan nilai existing
         return view('supervisor.evaluations.form', [
             'schedule' => $schedule,
             'type' => $type,
@@ -46,9 +61,13 @@ class EvaluationController extends Controller
         ]);
     }
 
+    /**
+     * Menyimpan hasil penilaian ke database.
+     */
     public function store(Request $request, Schedule $schedule, $type)
     {
         $user = Auth::user();
+        // Validasi akses dan data (mirip dengan show)
         if (!in_array($type, $this->types, true)) abort(404);
         if ($schedule->supervisor_id !== $user->id) abort(403);
 
@@ -58,11 +77,12 @@ class EvaluationController extends Controller
                 ->with('error', $this->requirementMessages[$type] ?? 'Berkas pendukung belum tersedia.');
         }
 
+        // Ambil struktur soal untuk membangun aturan validasi dinamis
         list($structure, $kind) = $this->structureFor($type);
 
-        // Build validation rules dynamically
         $rules = [];
         if ($type === 'pembelajaran') {
+            // Evaluasi Pembelajaran menggunakan Checkbox/Boolean (Ya/Tidak)
             foreach ($structure as $section) {
                 $sec = $section['key'];
                 foreach ($section['items'] as $itemKey => $label) {
@@ -70,6 +90,7 @@ class EvaluationController extends Controller
                 }
             }
         } else {
+            // Evaluasi RPP & Asesmen menggunakan Skala Likert 1-4
             foreach ($structure as $section) {
                 $sec = $section['key'];
                 foreach ($section['items'] as $itemKey => $label) {
@@ -79,7 +100,8 @@ class EvaluationController extends Controller
         }
         $validated = $request->validate($rules);
 
-        // Flatten breakdown
+        // Ratakan (Flatten) hasil input menjadi array key-value sederhana untuk disimpan
+        // Contoh: ['A1.a1_1' => 4, 'B2.b2_1' => 3]
         $breakdown = [];
         foreach ($validated as $sectionKey => $items) {
             foreach ($items as $itemKey => $val) {
@@ -88,9 +110,10 @@ class EvaluationController extends Controller
             }
         }
 
-        // Compute totals
+        // Hitung skor akhir dan tentukan predikat
         list($totalScore, $category) = $this->computeTotals($type, $structure, $breakdown);
 
+        // Simpan data (Update jika sudah ada)
         $record = Evaluation::updateOrCreate(
             [
                 'schedule_id' => $schedule->id,
@@ -98,27 +121,35 @@ class EvaluationController extends Controller
                 'type' => $type,
             ],
             [
-                'breakdown' => $breakdown,
+                'breakdown' => $breakdown, // Otomatis dicasting ke JSON oleh Model
                 'total_score' => $totalScore,
                 'category' => $category,
             ]
         );
 
-        // After saving, try to mark schedule as completed if requirements satisfied
+        // Cek apakah seluruh rangkaian penilaian sudah lengkap agar status jadwal bisa diupdate jadi "Selesai"
         try {
             $schedule->checkAndMarkCompleted();
         } catch (\Throwable $e) {
-            // ignore marking errors; not critical for saving evaluation
+            // Abaikan error pada step ini agar data nilai tetap aman
         }
 
         return redirect()->route('supervisor.schedules')
             ->with('success', 'Penilaian disimpan: '.$type.' (Skor: '.($totalScore ?? '-').($category? ' / '.$category : '').')');
     }
 
+    /**
+     * Mendefinisikan struktur instrumen penilaian (Hardcoded).
+     * Mengembalikan daftar pertanyaan dan jenis inputnya (Skor atau Ya/Tidak).
+     *
+     * @param string $type
+     * @return array [array $structure, string $kind]
+     */
     public static function structureFor($type)
     {
         if ($type === 'rpp') {
-            // RPP: Komponen A-E
+            // Struktur Instrumen RPP dengan Komponen A-E
+            // Setiap item memiliki key unik (misal 'a1_1') dan teks pertanyaan
             $structure = [
                 [ 'key' => 'A1', 'title' => 'Identifikasi Peserta Didik', 'items' => [
                     'a1_1' => 'Karakteristik Peserta Didik Teridentifikasi Dengan Jelas',
@@ -242,10 +273,11 @@ class EvaluationController extends Controller
                     'e3_3' => 'Dokumen Rapi Dan Mudah Dipahami',
                 ]],
             ];
+            // Format Pengembalian: [Struktur Array, Jenis Penilaian]
             return [$structure, 'skor'];
         }
         if ($type === 'asesmen') {
-            // Asesmen: indikator 1-4 per aspek
+            // Struktur Instrumen Asesmen: indikator 1-4 per aspek
             $structure = [
                 [ 'key' => 'A1', 'title' => 'Perencanaan Penilaian Deep Learning', 'items' => [
                     'a1_1' => 'Instrumen penilaian terintegrasi dalam RPP atau modul pembelajaran mendalam',
@@ -274,7 +306,7 @@ class EvaluationController extends Controller
             ];
             return [$structure, 'skor'];
         }
-        // Pembelajaran (Ya/Tidak per deskripsi)
+        // Struktur Instrumen Pembelajaran (Teaching Process): Input Ya/Tidak per deskripsi
         $structure = [
             [ 'key' => 'A1', 'title' => 'Berkesadaran (mindful)', 'items' => [
                 'a11' => 'Guru melakukan asesmen awal untuk mengetahui kondisi awal dan kebutuhan belajar peserta didik.',
@@ -335,9 +367,16 @@ class EvaluationController extends Controller
         return [$structure, 'ya_tidak'];
     }
 
+    /**
+     * Menghitung skor akhir dan menentukan predikat kelulusan.
+     * 
+     * @return array [float $percent, ?string $category]
+     */
     private function computeTotals($type, $structure, $breakdown)
     {
         if ($type === 'pembelajaran') {
+            // Rumus Pembelajaran (Ya/Tidak):
+            // (Jumlah "Ya" / Total Item) * 100
             $total = 0; $count = 0;
             foreach ($structure as $section) {
                 foreach ($section['items'] as $key => $_) {
@@ -347,6 +386,8 @@ class EvaluationController extends Controller
                 }
             }
             $percent = $count > 0 ? round(($total / $count) * 100, 2) : null;
+            
+            // Predikat Kualitatif
             $category = null;
             if ($percent !== null) {
                 if ($percent < 60) $category = 'Kurang';
@@ -356,10 +397,13 @@ class EvaluationController extends Controller
             }
             return [$percent, $category];
         }
-        // rpp/asesmen (1-4); only count provided values
+        
+        // Rumus RPP & Asesmen (Skala 1-4):
+        // (Total Skor Diperoleh / (Jumlah Item * 4)) * 100
         $sum = 0; $count = 0;
         foreach ($structure as $section) {
             foreach ($section['items'] as $key => $_) {
+                // Abaikan item yang tidak diisi (opsional)
                 $has = array_key_exists($section['key'].'.'.$key, $breakdown) && $breakdown[$section['key'].'.'.$key] !== null && $breakdown[$section['key'].'.'.$key] !== '';
                 if (!$has) continue;
                 $count++;
@@ -367,6 +411,7 @@ class EvaluationController extends Controller
                 $sum += $val;
             }
         }
+        
         $percent = $count > 0 ? round(($sum / ($count * 4)) * 100, 2) : null;
         return [$percent, null];
     }

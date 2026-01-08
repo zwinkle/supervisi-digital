@@ -11,17 +11,27 @@ use Illuminate\Support\Facades\Schema;
 
 class ProfileController extends Controller
 {
+    /**
+     * Menampilkan form kelengkapan profil.
+     * Halaman ini wajib bagi pengguna baru (misal via login Google) yang datanya belum lengkap (NIP, peran, sekolah).
+     */
     public function showComplete()
     {
         $user = Auth::user();
         $schools = School::orderBy('name')->get(['id','name']);
+        
+        // Cek apakah user sudah punya peran tertentu
         $hasTeacher = $user->schools()->wherePivot('role','teacher')->exists();
         $hasSupervisor = $user->schools()->wherePivot('role','supervisor')->exists();
         $teacherSchoolId = $user->schools()->wherePivot('role','teacher')->value('schools.id');
         $supervisorSchoolId = $user->schools()->wherePivot('role','supervisor')->value('schools.id');
+        
+        // Data opsi dropdown
         $classes = TeacherOptions::classes();
         $subjects = TeacherOptions::subjects();
         $teacherTypes = TeacherOptions::teacherTypes();
+        
+        // Pre-fill fields jika sudah ada data
         $resolvedTeacherType = $user->resolved_teacher_type;
         $resolvedTeacherSubject = $user->resolved_teacher_subject;
         $resolvedTeacherClass = $user->resolved_teacher_class;
@@ -42,6 +52,10 @@ class ProfileController extends Controller
         ));
     }
 
+    /**
+     * Menyimpan data pelengkap profil.
+     * Mengupdate informasi vital seperti NIP, penugasan sekolah, dan spesialisasi guru (Mapel/Kelas).
+     */
     public function storeComplete(Request $request)
     {
         $user = Auth::user();
@@ -52,11 +66,14 @@ class ProfileController extends Controller
 
         $hasTeacher = $user->schools()->wherePivot('role','teacher')->exists();
         $hasSupervisor = $user->schools()->wherePivot('role','supervisor')->exists();
+        
         $rules = [
             'name' => ['required','string','max:255'],
-            // only digits, no spaces/letters, reasonable length (8-20)
+            // Validasi NIP: angka only, panjang 8-18 karakter
             'nip' => ['required','regex:/^\d+$/','min:8','max:18'],
         ];
+        
+        // Validasi Kondisional: Jika user mendaftar sebagai Guru, wajib mengisi detail tipe guru
         $requiresTeacherMeta = !$hasSupervisor || $hasTeacher;
         $teacherTypeRule = $requiresTeacherMeta ? 'required' : 'nullable';
         $rules['teacher_type'] = [$teacherTypeRule, Rule::in($teacherTypes)];
@@ -67,27 +84,32 @@ class ProfileController extends Controller
 
         $rules['subject'] = [$subjectRequired ? 'required' : 'nullable', Rule::in($subjects)];
         $rules['class_name'] = [$classRequired ? 'required' : 'nullable', Rule::in($classes)];
+        
+        // Jika user masih fresh (belum punya role apapun), wajib memilih sekolah induk
         if (!$hasTeacher && !$hasSupervisor) {
             $rules['school_id'] = ['required','integer', Rule::exists('schools','id')];
         } else {
             $rules['school_id'] = ['nullable','integer', Rule::exists('schools','id')];
         }
+        
         $validated = $request->validate($rules, [
-            'nip.regex' => 'NIP harus berupa angka saja.',
-            'teacher_type.in' => 'Pilih jenis guru yang tersedia.',
-            'subject.in' => 'Pilih mata pelajaran yang tersedia.',
-            'class_name.in' => 'Kelas harus 1-6.',
+            'nip.regex' => 'Format NIP tidak valid (harus angka).',
+            'teacher_type.in' => 'Pilih jenis guru yang valid.',
+            'subject.in' => 'Mata pelajaran tidak valid.',
+            'class_name.in' => 'Kelas harus antara Kelas 1-6.',
         ]);
 
         $user->fill([
             'name' => $validated['name'],
             'nip' => $validated['nip'],
         ]);
+        
         $hasTeacherTypeColumn = Schema::hasColumn('users', 'teacher_type');
         if ($hasTeacherTypeColumn && array_key_exists('teacher_type', $validated)) {
             $user->teacher_type = $validated['teacher_type'];
         }
 
+        // Set metadata guru sesuai tipe yang dipilih
         if (($validated['teacher_type'] ?? null) === 'subject') {
             $user->subject = $validated['subject'] ?? null;
             $user->class_name = null;
@@ -95,6 +117,7 @@ class ProfileController extends Controller
             $user->class_name = $validated['class_name'] ?? null;
             $user->subject = null;
         } else {
+            // Fallback
             if (array_key_exists('subject', $validated)) {
                 $user->subject = $validated['subject'];
             }
@@ -104,7 +127,7 @@ class ProfileController extends Controller
         }
         $user->save();
 
-        // Attach as teacher only if not attached and a school_id is provided (e.g., self-filled profile)
+        // Assign sekolah sebagai guru jika user belum punya role guru dan ada input school_id
         if (!$hasTeacher && !empty($validated['school_id'])) {
             $user->schools()->attach($validated['school_id'], ['role' => 'teacher']);
         }

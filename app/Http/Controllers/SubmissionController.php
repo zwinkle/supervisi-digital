@@ -13,18 +13,28 @@ use Illuminate\Support\Facades\Log;
 
 class SubmissionController extends Controller
 {
+    /**
+    /**
+     * Menampilkan halaman upload dokumen.
+     * Halaman ini digunakan guru untuk mengunggah RPP, video, dan dokumen pendukung lainnya.
+     */
     public function showForm(Schedule $schedule)
     {
         $user = Auth::user();
-        // Basic authorization: only the assigned teacher or supervisor can access
+        // Validasi akses: Pastikan hanya pemilik jadwal (guru) atau supervisor terkait yang bisa akses
         if ($user->id !== $schedule->teacher_id && $user->id !== $schedule->supervisor_id) {
             abort(403);
         }
+        // Eager load relasi yang diperlukan untuk meminimalisir query database berulang
         $schedule->loadMissing(['submission.documents.file','submission.videoFile']);
         return view('submissions.upload', compact('schedule'));
     }
 
-        public function status(Request $request, Schedule $schedule)
+    /**
+     * Endpoint API status kelengkapan dokumen.
+     * Endpoint ini dipanggil via AJAX untuk update progress bar dan status file secara real-time.
+     */
+    public function status(Request $request, Schedule $schedule)
     {
         $user = Auth::user();
         if ($user->id !== $schedule->teacher_id && $user->id !== $schedule->supervisor_id) {
@@ -34,12 +44,14 @@ class SubmissionController extends Controller
         $schedule->loadMissing(['submission.documents.file','submission.videoFile']);
         $submission = $schedule->submission;
 
+        // Daftar kategori dokumen yang harus dilengkapi
         $categories = SubmissionDocument::ALLOWED_CATEGORIES;
         $documentsData = [];
         foreach ($categories as $category) {
             $documentsData[$category] = [];
         }
 
+        // Menyiapkan data batas maksimal upload per kategori
         $limits = [];
         foreach ($categories as $category) {
             $limits[$category] = [
@@ -56,8 +68,12 @@ class SubmissionController extends Controller
 
         $drive = null;
 
+        // Blok Try-Catch Besar untuk interaksi Google Drive
+        // Karena koneksi ke Google API bisa gagal sewaktu-waktu (token expired, network error),
+        // kita bungkus agar tidak membuat halaman error 500, tapi tetap mengembalikan data yang bisa ditampilkan.
         try {
             if ($submission) {
+                // Loop setiap kategori dokumen untuk mengambil detail file
                 foreach ($categories as $category) {
                     $docs = $submission->documents->where('category', $category)->values();
                     $data['documents'][$category] = $docs->map(function ($doc) use (&$drive, $user) {
@@ -66,16 +82,19 @@ class SubmissionController extends Controller
                             return null;
                         }
 
+                        // Jika file tersimpan di Google Drive tapi link view-nya belum ada di database lokal
+                        // Maka kita perlu request ke API Google Drive untuk minta link terbaru & ukuran file
                         if ($file->google_file_id && (empty($file->web_view_link) || empty($file->extra['size']))) {
                             if ($user->google_access_token) {
                                 try {
+                                    // Inisialisasi Service Google Drive (koneksi ke API)
                                     $drive = $drive ?? new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
                                     
-                                    // Check if token is valid and refresh if needed
+                                    // Cek apakah token masih valid, jika tidak coba refresh
                                     if (!$drive->isTokenValid()) {
                                         $newToken = $drive->getRefreshedToken();
                                         if ($newToken) {
-                                            // Token refreshed successfully, update in database
+                                            // Token berhasil diperbarui, simpan ke database user
                                             $user->google_access_token = $newToken['access_token'];
                                             if (!empty($newToken['expires_in'])) {
                                                 $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
@@ -85,12 +104,13 @@ class SubmissionController extends Controller
                                             }
                                             $user->save();
                                         } else {
-                                            // Token refresh failed, skip fetching file info
-                                            Log::warning('Failed to refresh token for file info, skipping file', ['file_id' => $file->google_file_id]);
-                                            return null; // Skip this file by returning null
+                                            // Gagal refresh token, skip file ini
+                                            Log::warning('Gagal refresh token saat ambil info file', ['file_id' => $file->google_file_id]);
+                                            return null; 
                                         }
                                     }
                                     
+                                    // Panggil API Google untuk ambil metadata file (Link View, Ukuran, dll)
                                     $remote = $drive->getFile($file->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size');
                                     $file->web_view_link = $remote->webViewLink ?? $file->web_view_link;
                                     $file->web_content_link = $remote->webContentLink ?? $file->web_content_link;
@@ -99,14 +119,15 @@ class SubmissionController extends Controller
                                         $extra['size'] = (int) $remote->size;
                                     }
                                     $file->extra = $extra;
-                                    $file->save();
+                                    $file->save(); // Update cache lokal
                                 } catch (\Throwable $e) {
-                                    Log::warning('Failed to fetch file info from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
-                                    // Continue processing other files
+                                    Log::warning('Gagal ambil info file dari Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
+                                    // Lanjut ke file berikutnya meski yang ini gagal
                                 }
                             }
                         }
 
+                        // Kembalikan data file yang sudah bersih untuk JSON response
                         return [
                             'id' => $doc->id,
                             'name' => $file->name,
@@ -117,18 +138,19 @@ class SubmissionController extends Controller
                     })->filter()->values()->all();
                 }
 
+                // Proses khusus untuk Video Pembelajaran
                 if ($submission->videoFile) {
                     $vid = $submission->videoFile;
+                    // Logika serupa: Cek metadata video di Drive jika belum lengkap
                     if (empty($vid->extra['is_external_link']) && (empty($vid->extra['videoMediaMetadata']) || empty($vid->web_view_link) || empty($vid->extra['size']))) {
                         if ($user->google_access_token) {
                             try {
                                 $drive = $drive ?? new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
                                 
-                                // Check if token is valid and refresh if needed
+                                // Cek dan refresh token jika perlu
                                 if (!$drive->isTokenValid()) {
                                     $newToken = $drive->getRefreshedToken();
                                     if ($newToken) {
-                                        // Token refreshed successfully, update in database
                                         $user->google_access_token = $newToken['access_token'];
                                         if (!empty($newToken['expires_in'])) {
                                             $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
@@ -138,7 +160,7 @@ class SubmissionController extends Controller
                                         }
                                         $user->save();
                                         
-                                        // Continue with video processing after token refresh
+                                        // Coba ambil metadata video lagi setelah token baru didapat
                                         $g = $drive->getFile($vid->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size, videoMediaMetadata');
                                         $vid->web_view_link = $g->webViewLink ?? $vid->web_view_link;
                                         $vid->web_content_link = $g->webContentLink ?? $vid->web_content_link;
@@ -148,12 +170,10 @@ class SubmissionController extends Controller
                                         $vid->extra = $extra;
                                         $vid->save();
                                     } else {
-                                        // Token refresh failed, skip fetching file info
-                                        Log::warning('Failed to refresh token for video info, skipping', ['file_id' => $vid->google_file_id]);
-                                        // Continue without updating video metadata
+                                        Log::warning('Gagal refresh token untuk video info', ['file_id' => $vid->google_file_id]);
                                     }
                                 } else {
-                                    // Token is valid, continue with video processing
+                                    // Token valid, langsung ambil metadata
                                     $g = $drive->getFile($vid->google_file_id, 'id, name, webViewLink, webContentLink, mimeType, size, videoMediaMetadata');
                                     $vid->web_view_link = $g->webViewLink ?? $vid->web_view_link;
                                     $vid->web_content_link = $g->webContentLink ?? $vid->web_content_link;
@@ -164,8 +184,7 @@ class SubmissionController extends Controller
                                     $vid->save();
                                 }
                             } catch (\Throwable $e) {
-                                Log::warning('Failed to fetch video info from Drive', ['error' => $e->getMessage(), 'file_id' => $vid->google_file_id]);
-                                // Continue processing
+                                Log::warning('Gagal ambil info video dari Drive', ['error' => $e->getMessage(), 'file_id' => $vid->google_file_id]);
                             }
                         }
                     }
@@ -180,7 +199,7 @@ class SubmissionController extends Controller
                 }
             }
         } catch (\Throwable $e) {
-            // ignore errors; return whatever we have
+            // Abaikan error global di blok ini agar return JSON tetap jalan
         }
 
         return response()->json($data);
@@ -188,19 +207,26 @@ class SubmissionController extends Controller
 
 
 
-        public function store(Request $request, Schedule $schedule)
+    /**
+     * Menangani proses upload file atau penyimpanan link video.
+     * Method ini akan mengupload file fisik ke Google Drive dan menyimpan metadatanya ke database.
+     */
+    public function store(Request $request, Schedule $schedule)
     {
         $user = Auth::user();
         if ($user->id !== $schedule->teacher_id) {
             abort(403);
         }
 
+        // Ambil input file dari request.
+        // Kita normalisasi input agar selalu berbentuk array, untuk menghandle multiple file upload.
         $rawInputs = [
             'rpp' => $request->file('rpp', []),
             'asesmen' => $request->file('asesmen', []),
             'administrasi' => $request->file('administrasi', []),
         ];
 
+        // Normalisasi file upload: Pastikan semua kategori berisi array of file, kosong jika tidak ada.
         $normalizedFiles = [];
         foreach ($rawInputs as $category => $files) {
             if (!$files) {
@@ -219,26 +245,28 @@ class SubmissionController extends Controller
             'administrasi' => 'Administrasi',
         ];
 
+        // Pengecekan Error Upload PHP Native (misal: file terlalu besar melebihi batas php.ini)
         $errorMap = function (?int $code) {
             switch ($code) {
                 case UPLOAD_ERR_INI_SIZE:
                 case UPLOAD_ERR_FORM_SIZE:
-                    return 'Ukuran file melebihi batas sistem. Perbesar batas server (upload_max_filesize/post_max_size) atau perkecil file.';
+                    return 'Ukuran file terlalu besar. Harap perbesar batas upload sever atau kompres file Anda.';
                 case UPLOAD_ERR_PARTIAL:
-                    return 'Unggahan file terputus. Coba ulangi unggah.';
+                    return 'Proses upload terputus. Silakan coba lagi.';
                 case UPLOAD_ERR_NO_FILE:
-                    return 'Tidak ada file yang diunggah.';
+                    return 'Tidak ada file yang dipilih untuk diupload.';
                 case UPLOAD_ERR_NO_TMP_DIR:
-                    return 'Server tidak memiliki folder sementara untuk unggahan.';
+                    return 'Server error: Folder temporary tidak ditemukan.';
                 case UPLOAD_ERR_CANT_WRITE:
-                    return 'Server gagal menulis file unggahan ke disk.';
+                    return 'Server error: Gagal menulis file ke disk.';
                 case UPLOAD_ERR_EXTENSION:
-                    return 'Unggahan dibatalkan oleh ekstensi PHP.';
+                    return 'Upload dibatalkan oleh ekstensi PHP.';
                 default:
                     return null;
             }
         };
 
+        // Cek error awal sebelum validasi Laravel
         $preErrors = [];
         foreach ($normalizedFiles as $category => $files) {
             foreach ($files as $file) {
@@ -255,6 +283,7 @@ class SubmissionController extends Controller
             return back()->withErrors($preErrors)->withInput();
         }
 
+        // Validasi Laravel untuk tipe file dan ukuran (max 20MB)
         $validated = $request->validate([
             'rpp' => ['nullable', 'array'],
             'rpp.*' => ['file', 'mimetypes:application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'max:20480'],
@@ -274,6 +303,7 @@ class SubmissionController extends Controller
             'video_link.max' => 'Link video terlalu panjang.',
         ]);
 
+        // Menggabungkan semua file yang lolos validasi ke satu list antrian
         $incomingFiles = [];
         foreach ($normalizedFiles as $category => $files) {
             foreach ($files as $file) {
@@ -285,11 +315,13 @@ class SubmissionController extends Controller
             return back()->withErrors(['upload' => 'Pilih minimal satu berkas untuk diunggah (RPP, Asesmen, Administrasi, atau tautan Video).'])->withInput();
         }
 
+        // Buat record submission jika belum ada
         $submission = Submission::firstOrCreate(
             ['schedule_id' => $schedule->id, 'teacher_id' => $user->id],
             ['submitted_at' => now()]
         );
 
+        // Cek Quota: Mencegah user mengupload lebih dari batas maksimum per kategori
         $submission->loadMissing('documents');
         $existingPerCategory = $submission->documents->groupBy('category')->map->count();
         $incomingPerCategory = [];
@@ -306,6 +338,7 @@ class SubmissionController extends Controller
             }
         }
 
+        // Cek Token Google: Jika ada file fisik yg mau diupload, user wajib punya token Google yang valid
         $needsDrive = !empty($incomingFiles);
         if ($needsDrive && !$user->google_access_token) {
             return back()->withErrors(['google' => 'Token Google tidak tersedia. Silakan login ulang dengan Google.']);
@@ -318,13 +351,13 @@ class SubmissionController extends Controller
 
             if ($needsDrive) {
                 try {
+                    // Inisialisasi koneksi ke Google Drive
                     $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
                     
-                    // Check if token is valid, if not try to refresh
+                    // Cek validitas token dan refresh otomatis jika expired
                     if (!$drive->isTokenValid()) {
                         $newToken = $drive->getRefreshedToken();
                         if ($newToken) {
-                            // Token refreshed successfully, update in database
                             $user->google_access_token = $newToken['access_token'];
                             if (!empty($newToken['expires_in'])) {
                                 $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
@@ -335,11 +368,13 @@ class SubmissionController extends Controller
                             $user->save();
                             $tokenRefreshed = true;
                         } else {
-                            // Token refresh failed, user needs to re-authenticate
+                            // Jika refresh gagal (misal akses dicabut user), minta login ulang
                             return back()->withErrors(['google' => 'Token Google telah expired dan tidak dapat diperbarui. Silakan logout dari Google di halaman profil dan login kembali.'])->withInput();
                         }
                     }
                     
+                    // Siapkan folder tujuan di Google Drive
+                    // Format nama folder: "[Nama Jadwal] - [Tanggal]"
                     $rootId = $drive->ensureRootFolder();
                     $dateStr = $schedule->date->format('d-m-Y');
                     $rawTitle = $schedule->title ?: 'Sesi Supervisi';
@@ -355,6 +390,7 @@ class SubmissionController extends Controller
 
             $newFileRecords = [];
 
+            // Proses Upload Setiap File ke Google Drive
             foreach ($incomingFiles as $payload) {
                 if (!$drive) {
                     return back()->withErrors(['upload' => 'Gagal menginisialisasi Google Drive.'])->withInput();
@@ -363,8 +399,12 @@ class SubmissionController extends Controller
                 /** @var \Illuminate\Http\UploadedFile $docFile */
                 $docFile = $payload['file'];
                 $category = $payload['category'];
+                
+                // Baca konten file dan upload ke Drive
                 $contents = file_get_contents($docFile->getRealPath());
                 $meta = $drive->uploadFile($dateFolderId, $docFile->getClientOriginalName(), $docFile->getMimeType(), $contents);
+                
+                // Hitung jumlah halaman jika PDF (untuk analisa cepat dosen)
                 $pageCount = null;
                 if (strtolower($docFile->getClientOriginalExtension()) === 'pdf') {
                     $matches = [];
@@ -374,6 +414,7 @@ class SubmissionController extends Controller
                     }
                 }
 
+                // Simpan metadata file ke database lokal (tabel 'files')
                 $fileRecord = File::create([
                     'owner_user_id' => $user->id,
                     'schedule_id' => $schedule->id,
@@ -389,6 +430,7 @@ class SubmissionController extends Controller
                     ],
                 ]);
 
+                // Hubungkan file dengan submission dan kategorinya (RPP/Asesmen/dll)
                 SubmissionDocument::create([
                     'submission_id' => $submission->id,
                     'file_id' => $fileRecord->id,
@@ -398,11 +440,13 @@ class SubmissionController extends Controller
                 $newFileRecords[] = $fileRecord;
             }
 
+            // Proses Link Video (juga disimpan sebagai 'File' tapi tipe khusus)
             $videoRecord = null;
             $oldVideo = null;
             if ($request->filled('video_link')) {
                 $videoLink = trim($request->input('video_link'));
                 $youtubeMatches = [];
+                // Deteksi apakah link YouTube atau Google Drive
                 $isYoutube = preg_match('/(?:(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|\S*?[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11}))/i', $videoLink, $youtubeMatches);
                 $isGoogleDrive = preg_match('/(?:https?:\/\/)?(?:www\.)?drive\.google\.com/i', $videoLink);
 
@@ -411,6 +455,7 @@ class SubmissionController extends Controller
                 }
 
                 $videoName = 'Video Pembelajaran';
+                // Jika YouTube, coba ambil Judul Video via oEmbed
                 if ($isYoutube && !empty($youtubeMatches[1])) {
                     $videoId = $youtubeMatches[1];
                     $videoName = 'YouTube: ' . $videoId;
@@ -437,10 +482,11 @@ class SubmissionController extends Controller
                     }
                 }
 
+                // Buat record file untuk video
                 $videoRecord = File::create([
                     'owner_user_id' => $user->id,
                     'schedule_id' => $schedule->id,
-                    'google_file_id' => null,
+                    'google_file_id' => null, // null karena ini external link, bukan upload kita
                     'name' => $videoName,
                     'mime' => 'video/link',
                     'web_view_link' => $videoLink,
@@ -453,10 +499,12 @@ class SubmissionController extends Controller
                     ],
                 ]);
 
+                // Hapus video lama jika ada (agar tidak menumpuk)
                 $oldVideo = $submission->videoFile;
                 $submission->video_file_id = $videoRecord->id;
                 if ($oldVideo) {
                     if ($oldVideo->google_file_id && empty($oldVideo->extra['is_external_link'])) {
+                        // Jika video lama adalah file yang DIUPLOAD ke Drive (bukan link), hapus dari Drive juga
                         if (!$drive && $user->google_access_token) {
                             try {
                                 $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
@@ -480,6 +528,8 @@ class SubmissionController extends Controller
                 }
             }
 
+            // Sharing Folder: Berikan akses 'Commenter' ke email Supervisor
+            // Agar supervisor bisa melihat file tanpa harus login akun teacher
             if ($drive && $dateFolderId) {
                 try {
                     $drive->shareWith($dateFolderId, $schedule->supervisor->email, 'commenter');
@@ -494,6 +544,7 @@ class SubmissionController extends Controller
             $submission->submitted_at = $submission->submitted_at ?: now();
             $submission->save();
 
+            // Coba auto-complete jadwal jika semua syarat terpenuhi
             try {
                 $schedule->checkAndMarkCompleted();
             } catch (\Throwable $e) {
@@ -501,7 +552,7 @@ class SubmissionController extends Controller
             }
 
             if ($drive) {
-                // Only update token if we haven't already refreshed it
+                // Update token jika ada perubahan otomatis dari library Google Client
                 if (!$tokenRefreshed) {
                     $newToken = $drive->getClient()->getAccessToken();
                     if (!empty($newToken['access_token'])) {
@@ -527,7 +578,11 @@ class SubmissionController extends Controller
     }
 
 
-        public function deleteFile(Request $request, Schedule $schedule, string $kind)
+        /**
+     * Menghapus video (link) yang sudah disimpan.
+     * Jika video tersimpan sebagai file di Drive (upload), juga akan dihapus dari Drive.
+     */
+    public function deleteFile(Request $request, Schedule $schedule, string $kind)
     {
         $user = Auth::user();
         if ($user->id !== $schedule->teacher_id) {
@@ -546,15 +601,15 @@ class SubmissionController extends Controller
         $file = $submission->videoFile;
         $drive = null;
 
+        // Jika file ada di Google Drive (bukan external link), coba hapus juga dari Drive
         if ($file->google_file_id && empty($file->extra['is_external_link']) && $user->google_access_token) {
             try {
                 $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
                 
-                // Check if token is valid and refresh if needed
+                // Cek token validitas sebelum delete
                 if (!$drive->isTokenValid()) {
                     $newToken = $drive->getRefreshedToken();
                     if ($newToken) {
-                        // Token refreshed successfully, update in database
                         $user->google_access_token = $newToken['access_token'];
                         if (!empty($newToken['expires_in'])) {
                             $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
@@ -564,8 +619,7 @@ class SubmissionController extends Controller
                         }
                         $user->save();
                     } else {
-                        // Token refresh failed, skip file deletion from Drive
-                        Log::warning('Failed to refresh token for video deletion, file will remain in Drive', ['file_id' => $file->google_file_id]);
+                        Log::warning('Gagal refresh token saat hapus video, file tetap ada di Drive', ['file_id' => $file->google_file_id]);
                         $drive = null;
                     }
                 }
@@ -574,18 +628,18 @@ class SubmissionController extends Controller
                     try {
                         $drive->deleteFile($file->google_file_id);
                     } catch (\Throwable $e) {
-                        Log::warning('Failed to delete Video from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
+                        Log::warning('Gagal menghapus video dari Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
                     }
                 }
             } catch (\Throwable $e) {
-                Log::error('Failed to initialize Drive service for video delete', ['error' => $e->getMessage()]);
+                Log::error('Gagal inisialisasi Drive saat hapus video', ['error' => $e->getMessage()]);
             }
         }
 
         try {
             $file->delete();
         } catch (\Throwable $e) {
-            Log::error('Failed to delete Video DB record', ['error' => $e->getMessage()]);
+            Log::error('Gagal menghapus record video dari DB', ['error' => $e->getMessage()]);
         }
         $submission->video_file_id = null;
         $submission->save();
@@ -593,6 +647,10 @@ class SubmissionController extends Controller
         return back()->with('success', 'Video berhasil dihapus.');
     }
 
+    /**
+     * Menghapus dokumen (RPP/Asesmen/dll) yang sudah diupload.
+     * File akan dihapus dari Google Drive dan record database juga dihapus.
+     */
     public function deleteDocument(Request $request, Schedule $schedule, SubmissionDocument $document)
     {
         $user = Auth::user();
@@ -608,15 +666,14 @@ class SubmissionController extends Controller
         $file = $document->file;
         $drive = null;
 
+        // Hapus fisik file di Google Drive
         if ($file && $file->google_file_id && $user->google_access_token) {
             try {
                 $drive = new GoogleDriveService($user->google_access_token, $user->google_refresh_token);
                 
-                // Check if token is valid and refresh if needed
                 if (!$drive->isTokenValid()) {
                     $newToken = $drive->getRefreshedToken();
                     if ($newToken) {
-                        // Token refreshed successfully, update in database
                         $user->google_access_token = $newToken['access_token'];
                         if (!empty($newToken['expires_in'])) {
                             $user->google_token_expires_at = now()->addSeconds((int) $newToken['expires_in']);
@@ -626,8 +683,7 @@ class SubmissionController extends Controller
                         }
                         $user->save();
                     } else {
-                        // Token refresh failed, skip file deletion from Drive
-                        Log::warning('Failed to refresh token for document deletion, file will remain in Drive', ['file_id' => $file->google_file_id]);
+                        Log::warning('Gagal refresh token saat hapus dokumen, file tetap di Drive', ['file_id' => $file->google_file_id]);
                         $drive = null;
                     }
                 }
@@ -636,20 +692,21 @@ class SubmissionController extends Controller
                     try {
                         $drive->deleteFile($file->google_file_id);
                     } catch (\Throwable $e) {
-                        Log::warning('Failed to delete document from Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
+                        Log::warning('Gagal menghapus dokumen dari Drive', ['error' => $e->getMessage(), 'file_id' => $file->google_file_id]);
                     }
                 }
             } catch (\Throwable $e) {
-                Log::error('Failed to initialize Drive service for document delete', ['error' => $e->getMessage()]);
+                Log::error('Gagal inisialisasi Drive saat hapus dokumen', ['error' => $e->getMessage()]);
                 $drive = null;
             }
         }
 
+        // Hapus record di database
         if ($file) {
             try {
                 $file->delete();
             } catch (\Throwable $e) {
-                Log::warning('Failed to delete document DB record', ['error' => $e->getMessage()]);
+                Log::warning('Gagal menghapus dokumen DB record', ['error' => $e->getMessage()]);
             }
         }
 

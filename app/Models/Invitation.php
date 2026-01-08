@@ -19,17 +19,24 @@ class Invitation extends Model
         'invited_by',
         'expires_at',
         'used_at',
-        'teacher_type',
-        'teacher_subject',
-        'teacher_class',
+        'teacher_type',     // Jenis guru (untuk undangan guru)
+        'teacher_subject',  // Mapel (jika guru mapel)
+        'teacher_class',    // Kelas (jika guru kelas)
     ];
 
+    /**
+     * Casting tipe data otomatis.
+     */
     protected $casts = [
         'school_ids' => 'array',
         'expires_at' => 'datetime',
         'used_at' => 'datetime',
     ];
 
+    /**
+     * Boot model.
+     * Generate UUID untuk undangan baru.
+     */
     protected static function booted(): void
     {
         static::creating(function (self $invitation) {
@@ -44,6 +51,9 @@ class Invitation extends Model
         return 'uuid';
     }
 
+    /**
+     * Relasi ke user yang membuat undangan.
+     */
     public function inviter()
     {
         return $this->belongsTo(User::class, 'invited_by');

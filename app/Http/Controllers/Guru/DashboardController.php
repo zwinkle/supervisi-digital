@@ -9,28 +9,32 @@ use Illuminate\Support\Facades\Auth;
 
 class DashboardController extends Controller
 {
+    /**
+     * Menampilkan dashboard utama Guru.
+     * Menyajikan ringkasan tugas (belum dikirim), status penilaian, dan riwayat supervisi.
+     */
     public function index(Request $request)
     {
         $user = Auth::user();
         
-        // Get pending schedules (future dates, not submitted yet)
+        // Pending: Jadwal mendatang yang dokumennya belum di-upload (Submit)
         $pendingSchedules = Schedule::where('teacher_id', $user->id)
             ->where('date', '>=', now())
             ->whereDoesntHave('submission')
             ->count();
             
-        // Get in-progress schedules (submitted but not completed)
+        // In Progress: Dokumen sudah dikirim, menunggu penilaian Supervisor
         $inProgressSchedules = Schedule::where('teacher_id', $user->id)
             ->whereHas('submission')
             ->whereNull('evaluated_at')
             ->count();
             
-        // Get completed schedules (evaluated)
+        // Selesai: Sudah dinilai oleh Supervisor
         $completedSchedules = Schedule::where('teacher_id', $user->id)
             ->whereNotNull('evaluated_at')
             ->count();
             
-        // Get last supervision details
+        // Widget Utama: Detail supervisi terakhir yang sudah dinilai
         $lastSupervision = Schedule::where('teacher_id', $user->id)
             ->whereNotNull('evaluated_at')
             ->orderBy('evaluated_at', 'desc')
@@ -39,13 +43,14 @@ class DashboardController extends Controller
         $lastSupervisionTitle = $lastSupervision ? $lastSupervision->title : 'Tidak ada data';
         $lastSupervisionDate = $lastSupervision ? $lastSupervision->evaluated_at->format('d M Y') : '-';
         
-        // Get recent supervision details for display
+        // Ringkasan 2 supervisi terakhir dalam bentuk list
         $recentSupervisions = Schedule::where('teacher_id', $user->id)
             ->with(['evaluations'])
             ->orderBy('date', 'desc')
             ->limit(2)
             ->get()
             ->map(function ($schedule) {
+                // Ekstrak skor per aspek
                 $rppEval = $schedule->evaluations->where('type', 'rpp')->first();
                 $pembelajaranEval = $schedule->evaluations->where('type', 'pembelajaran')->first();
                 $asesmenEval = $schedule->evaluations->where('type', 'asesmen')->first();
@@ -62,7 +67,7 @@ class DashboardController extends Controller
                 ];
             });
         
-        // Calculate trend indicators based on actual data with timestamp
+        // Kalkulasi tren aktivitas (Mingguan/Bulanan)
         $pendingThisWeek = Schedule::where('teacher_id', $user->id)
             ->whereBetween('date', [now()->startOfWeek(), now()->endOfWeek()])
             ->whereDoesntHave('submission')

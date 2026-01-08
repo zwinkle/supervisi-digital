@@ -16,6 +16,10 @@ class InviteMail extends Mailable
     public string $signedUrl;
     public \Carbon\Carbon $expiresAt;
 
+    /**
+     * Create a new message instance.
+     * Mengirim link undangan bertanda tangan.
+     */
     public function __construct(string $email, string $role, array $schoolIds, string $signedUrl, \Carbon\Carbon $expiresAt)
     {
         $this->email = $email;
@@ -25,6 +29,9 @@ class InviteMail extends Mailable
         $this->expiresAt = $expiresAt;
     }
 
+    /**
+     * Build the message.
+     */
     public function build()
     {
         return $this->subject('Undangan Bergabung - Supervisi Digital')

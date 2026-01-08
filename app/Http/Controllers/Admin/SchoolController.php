@@ -9,6 +9,10 @@ use Illuminate\Support\Str;
 
 class SchoolController extends Controller
 {
+    /**
+     * Menampilkan daftar sekolah.
+     * Fitur ini mendukung pencarian real-time (AJAX) dan navigasi halaman (pagination).
+     */
     public function index(Request $request)
     {
         $q = trim((string) $request->input('q', ''));
@@ -20,6 +24,7 @@ class SchoolController extends Controller
 
         $schoolsQuery = School::query();
 
+        // Filter pencarian: Cocokkan kata kunci dengan Nama Sekolah atau Alamat
         if ($search) {
             $schoolsQuery->where(function ($query) use ($search) {
                 $query->whereRaw('LOWER(name) LIKE ?', ["%{$search}%"])
@@ -29,6 +34,8 @@ class SchoolController extends Controller
 
         $schools = $schoolsQuery->orderBy('name')->paginate($perPage)->withQueryString();
 
+        // Jika permintaan berasal dari AJAX (misal saat mengetik di kolom cari),
+        // Kembalikan hanya potongan HTML tabel saja untuk update parsial tanpa reload halaman.
         if ($request->wantsJson()) {
             return response()->json([
                 'html' => view('admin.schools.partials.results', [
@@ -42,11 +49,18 @@ class SchoolController extends Controller
             'q' => $q,
         ]);
     }
+
+    /**
+     * Menampilkan form input data sekolah baru.
+     */
     public function create()
     {
         return view('admin.schools.create');
     }
 
+    /**
+     * Menyimpan data sekolah baru ke dalam sistem.
+     */
     public function store(Request $request)
     {
         $data = $request->validate([
@@ -57,11 +71,17 @@ class SchoolController extends Controller
         return redirect()->route('admin.schools.index')->with('success', 'Sekolah berhasil dibuat');
     }
 
+    /**
+     * Menampilkan halaman edit data sekolah.
+     */
     public function edit(School $school)
     {
         return view('admin.schools.edit', compact('school'));
     }
 
+    /**
+     * Memperbarui informasi sekolah yang sudah tersimpan.
+     */
     public function update(Request $request, School $school)
     {
         $data = $request->validate([
@@ -72,6 +92,10 @@ class SchoolController extends Controller
         return redirect()->route('admin.schools.index')->with('success', 'Sekolah diperbarui');
     }
 
+    /**
+     * Menghapus data sekolah dari sistem.
+     * Perhatian: Data terkait mungkin akan ikut terhapus atau menyebabkan error jika ada foreign key constraint tanpa cascade.
+     */
     public function destroy(School $school)
     {
         $school->delete();
