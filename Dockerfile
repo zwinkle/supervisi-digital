@@ -70,9 +70,7 @@ RUN docker-php-ext-configure gd --with-freetype --with-jpeg \
         bcmath \
         opcache \
         pcntl \
-        exif \
-        sockets \
-        sodium
+        exif
 
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/custom.ini
 COPY docker/php/php-fpm.conf /usr/local/etc/php-fpm.d/www.conf
@@ -94,7 +92,6 @@ RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/log/nginx /var/log/supervisor \
     && chown -R www-data:www-data /var/log/nginx
 
-# Expose port internal (Nginx host yang forward ke sini via reverse proxy)
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
