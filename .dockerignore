@@ -1,0 +1,49 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Docker
+docker-compose*.yml
+Dockerfile*
+.dockerignore
+
+# Dependencies
+/vendor
+/node_modules
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Testing
+.phpunit.result.cache
+phpunit.xml
+tests/
+
+# Asset build sementara
+/public/hot
+/public/build
+
+# Storage
+/storage/app/*
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+!/storage/app/.gitignore
+!/storage/framework/.gitignore
+!/storage/logs/.gitignore
+
+# Editor & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Docs
+docs/
+*.md
