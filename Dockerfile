@@ -26,7 +26,7 @@ FROM node:22-alpine AS node-build
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci --omit=dev
+RUN npm ci
 
 COPY . .
 COPY --from=composer-build /app/vendor ./vendor
