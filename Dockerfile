@@ -12,10 +12,11 @@ RUN composer install \
     --no-plugins \
     --no-scripts \
     --prefer-dist \
-    --optimize-autoloader
+    --optimize-autoloader \
+    --ignore-platform-reqs
 
 COPY . .
-RUN composer dump-autoload --optimize --no-dev
+RUN composer dump-autoload --optimize --no-dev --ignore-platform-reqs
 
 # ============================================================
 # Stage 2: Node 22 / Vite build
@@ -93,7 +94,7 @@ RUN chown -R www-data:www-data /var/www/html \
     && mkdir -p /var/log/nginx /var/log/supervisor \
     && chown -R www-data:www-data /var/log/nginx
 
-# Expose port internal
+# Expose port internal (Nginx host yang forward ke sini via reverse proxy)
 EXPOSE 8080
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
